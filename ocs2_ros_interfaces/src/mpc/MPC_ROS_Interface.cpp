@@ -374,7 +374,7 @@ void MPC_ROS_Interface::launchNodes(ros::NodeHandle &nodeHandle) {
 #ifdef MEASURE_SLEEP_TIME
         auto t2 = std::chrono::steady_clock::now();
         ROS_INFO_STREAM("MPC sleep time: " << std::chrono::duration_cast<std::chrono::microseconds>(t2 - t1).count()
-                                           << "ms");
+                                           << "us");
 #endif
     }
 
