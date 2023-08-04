@@ -46,7 +46,7 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
                                        ReferenceManagerInterface &referenceManager,
                                        const PinocchioInterface &pinocchioInterface, const ModelSettings &modelSettings,
                                        std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPlannerPtr,
-                                       std::string gridMapTopic, GaitSchedule &gaitSchedule)
+                                       std::string gridMapTopic, GaitSchedule &gaitSchedule, bool useGridMap)
     : vx_(0.0),
       vy_(0.0),
       yrate_(0.0),
@@ -57,7 +57,7 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
       swingTrajectoryPlannerPtr_(swingTrajectoryPlannerPtr),
       modelSettings_(modelSettings),
       anymalInverseKinematics_(pinocchioInterface_, modelSettings_, referenceFile),
-      gridMapInterface_(nh, gridMapTopic),
+      gridMapInterface_(nh, gridMapTopic, useGridMap),
       gaitSchedule_(gaitSchedule),
       counter(0),
       teps_(1e-6),

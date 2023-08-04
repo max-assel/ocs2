@@ -5,7 +5,12 @@
 namespace ocs2 {
 namespace legged_robot {
 
-GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic) {
+GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap)
+    : useGridMap_(useGridMap) {
+    if (!useGridMap_) {
+        return;
+    }
+
     // Gridmap layer name
     layer_ = "elevation";
 
@@ -14,13 +19,13 @@ GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic) 
 
     // Wait for initial map message
     ROS_INFO("Waiting for initial grid map message");
-    // auto msgPtr = ::ros::topic::waitForMessage<grid_map_msgs::GridMap>(mapTopic);
-    // if (!msgPtr) {
-    //     std::cerr << "Failed to receive initial grid map message" << std::endl;
-    //     ::ros::shutdown();
-    //     return;
-    // }
-    // mapCallback(msgPtr);
+    auto msgPtr = ::ros::topic::waitForMessage<grid_map_msgs::GridMap>(mapTopic);
+    if (!msgPtr) {
+        std::cerr << "Failed to receive initial grid map message" << std::endl;
+        ::ros::shutdown();
+        return;
+    }
+    mapCallback(msgPtr);
 }
 void GridMapInterface::mapCallback(const grid_map_msgs::GridMap::ConstPtr &msgPtr) {
     grid_map::GridMapRosConverter converter;
@@ -29,10 +34,12 @@ void GridMapInterface::mapCallback(const grid_map_msgs::GridMap::ConstPtr &msgPt
 }
 
 scalar_t GridMapInterface::atPosition(scalar_t x, scalar_t y) {
-    // pos_[0] = x;
-    // pos_[1] = y;
-    // return map_.atPosition(layer_, pos_);
-    return 0.0;
+    if (!useGridMap_) {
+        return 0.0;
+    }
+    pos_[0] = x;
+    pos_[1] = y;
+    return map_.atPosition(layer_, pos_);
 }
 
 }  // namespace legged_robot

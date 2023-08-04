@@ -18,7 +18,7 @@ namespace legged_robot {
 
 class GridMapInterface {
    public:
-    GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic);
+    GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap = false);
     scalar_t atPosition(scalar_t x, scalar_t y);
 
    private:
@@ -28,6 +28,7 @@ class GridMapInterface {
     grid_map::Position pos_;
     ::ros::Subscriber mapSubscriber_;
     std::string layer_;
+    const bool useGridMap_;
 };
 
 }  // namespace legged_robot

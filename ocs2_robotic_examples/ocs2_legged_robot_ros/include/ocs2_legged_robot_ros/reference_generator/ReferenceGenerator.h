@@ -30,7 +30,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
                        ReferenceManagerInterface &referenceManager, const PinocchioInterface &pinocchioInterface,
                        const ModelSettings &modelSettings,
                        std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPlannerPtr, std::string gridMapTopic,
-                       GaitSchedule &gaitSchedule);
+                       GaitSchedule &gaitSchedule, bool useGridMap = false);
 
     // Generate reference trajectory for MPC before each solver run
     void preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t &currentState,

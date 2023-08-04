@@ -716,7 +716,6 @@ Visualization Manager:
       Namespaces:
         CoM Trajectory: true
         EE Trajectories: true
-        Future footholds: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -812,16 +811,6 @@ Visualization Manager:
           Value: true
         base_plan_frame_2:
           Value: true
-        base_plan_frame_3:
-          Value: true
-        base_plan_frame_4:
-          Value: true
-        base_plan_frame_5:
-          Value: true
-        base_plan_frame_6:
-          Value: true
-        base_plan_frame_7:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: Base pose plan
@@ -834,16 +823,6 @@ Visualization Manager:
         base_plan_frame_1:
           {}
         base_plan_frame_2:
-          {}
-        base_plan_frame_3:
-          {}
-        base_plan_frame_4:
-          {}
-        base_plan_frame_5:
-          {}
-        base_plan_frame_6:
-          {}
-        base_plan_frame_7:
           {}
       Update Interval: 0
       Value: true
@@ -858,57 +837,17 @@ Visualization Manager:
           Value: true
         LF_FOOT_plan_frame_2:
           Value: true
-        LF_FOOT_plan_frame_3:
-          Value: true
-        LF_FOOT_plan_frame_4:
-          Value: true
-        LF_FOOT_plan_frame_5:
-          Value: true
-        LF_FOOT_plan_frame_6:
-          Value: true
-        LF_FOOT_plan_frame_7:
-          Value: true
         LH_FOOT_plan_frame_1:
           Value: true
         LH_FOOT_plan_frame_2:
-          Value: true
-        LH_FOOT_plan_frame_3:
-          Value: true
-        LH_FOOT_plan_frame_4:
-          Value: true
-        LH_FOOT_plan_frame_5:
-          Value: true
-        LH_FOOT_plan_frame_6:
-          Value: true
-        LH_FOOT_plan_frame_7:
           Value: true
         RF_FOOT_plan_frame_1:
           Value: true
         RF_FOOT_plan_frame_2:
           Value: true
-        RF_FOOT_plan_frame_3:
-          Value: true
-        RF_FOOT_plan_frame_4:
-          Value: true
-        RF_FOOT_plan_frame_5:
-          Value: true
-        RF_FOOT_plan_frame_6:
-          Value: true
-        RF_FOOT_plan_frame_7:
-          Value: true
         RH_FOOT_plan_frame_1:
           Value: true
         RH_FOOT_plan_frame_2:
-          Value: true
-        RH_FOOT_plan_frame_3:
-          Value: true
-        RH_FOOT_plan_frame_4:
-          Value: true
-        RH_FOOT_plan_frame_5:
-          Value: true
-        RH_FOOT_plan_frame_6:
-          Value: true
-        RH_FOOT_plan_frame_7:
           Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
@@ -921,57 +860,17 @@ Visualization Manager:
           {}
         LF_FOOT_plan_frame_2:
           {}
-        LF_FOOT_plan_frame_3:
-          {}
-        LF_FOOT_plan_frame_4:
-          {}
-        LF_FOOT_plan_frame_5:
-          {}
-        LF_FOOT_plan_frame_6:
-          {}
-        LF_FOOT_plan_frame_7:
-          {}
         LH_FOOT_plan_frame_1:
           {}
         LH_FOOT_plan_frame_2:
-          {}
-        LH_FOOT_plan_frame_3:
-          {}
-        LH_FOOT_plan_frame_4:
-          {}
-        LH_FOOT_plan_frame_5:
-          {}
-        LH_FOOT_plan_frame_6:
-          {}
-        LH_FOOT_plan_frame_7:
           {}
         RF_FOOT_plan_frame_1:
           {}
         RF_FOOT_plan_frame_2:
           {}
-        RF_FOOT_plan_frame_3:
-          {}
-        RF_FOOT_plan_frame_4:
-          {}
-        RF_FOOT_plan_frame_5:
-          {}
-        RF_FOOT_plan_frame_6:
-          {}
-        RF_FOOT_plan_frame_7:
-          {}
         RH_FOOT_plan_frame_1:
           {}
         RH_FOOT_plan_frame_2:
-          {}
-        RH_FOOT_plan_frame_3:
-          {}
-        RH_FOOT_plan_frame_4:
-          {}
-        RH_FOOT_plan_frame_5:
-          {}
-        RH_FOOT_plan_frame_6:
-          {}
-        RH_FOOT_plan_frame_7:
           {}
       Update Interval: 0
       Value: true
@@ -1001,7 +900,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 4.147664546966553
+      Distance: 2.83194899559021
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1009,17 +908,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -2.6158955097198486
-        Y: 1.2111892700195312
-        Z: -0.2697732746601105
+        X: -0.2385510802268982
+        Y: 0.0976058840751648
+        Z: 0.20893941819667816
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.37039870023727417
+      Pitch: 0.4103986620903015
       Target Frame: <Fixed Frame>
-      Yaw: 1.203604817390442
+      Yaw: 0.9986050128936768
     Saved: ~
 Window Geometry:
   Displays:

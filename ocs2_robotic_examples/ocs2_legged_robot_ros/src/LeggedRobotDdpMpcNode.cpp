@@ -33,6 +33,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ros/init.h>
 #include <ros/package.h>
 
+#include <ocs2_core/misc/LoadData.h>
 #include <ocs2_ddp/GaussNewtonDDP_MPC.h>
 #include <ocs2_legged_robot/LeggedRobotInterface.h>
 #include <ocs2_ros_interfaces/mpc/MPC_ROS_Interface.h>
@@ -79,11 +80,13 @@ int main(int argc, char **argv) {
     mpc.getSolverPtr()->addSynchronizedModule(gaitReceiverPtr);
 
     // Reference generator
+    bool useGridMap;
+    loadData::loadCppDataType(referenceFile, "useGridMap", useGridMap);
     auto referenceGeneratorPtr = std::make_shared<ReferenceGenerator>(
         nodeHandle, referenceFile, interface.getCentroidalModelInfo(), mpc.getSolverPtr()->getReferenceManager(),
         interface.getPinocchioInterface(), interface.modelSettings(),
         interface.getSwitchedModelReferenceManagerPtr()->getSwingTrajectoryPlanner(), "gridmap",
-        *(interface.getSwitchedModelReferenceManagerPtr()->getGaitSchedule()));
+        *(interface.getSwitchedModelReferenceManagerPtr()->getGaitSchedule()), useGridMap);
     mpc.getSolverPtr()->addSynchronizedModule(referenceGeneratorPtr);
 
     // observer for zero velocity constraints (only add this for debugging as it slows down the solver)
