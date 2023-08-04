@@ -39,25 +39,33 @@ namespace ocs2 {
  * This class is an interface class for the user defined target trajectories.
  */
 struct TargetTrajectories {
-  explicit TargetTrajectories(size_t size = 0);
-  TargetTrajectories(scalar_array_t desiredTimeTrajectory, vector_array_t desiredStateTrajectory,
-                     vector_array_t desiredInputTrajectory = vector_array_t());
-  void clear();
-  bool empty() const { return timeTrajectory.empty() || stateTrajectory.empty(); }
-  size_t size() const { return timeTrajectory.size(); }
+    explicit TargetTrajectories(size_t size = 0);
+    TargetTrajectories(scalar_array_t desiredTimeTrajectory, vector_array_t desiredStateTrajectory,
+                       vector_array_t desiredInputTrajectory = vector_array_t());
+    void clear();
+    bool empty() const { return timeTrajectory.empty() || stateTrajectory.empty(); }
+    size_t size() const { return timeTrajectory.size(); }
 
-  bool operator==(const TargetTrajectories& other);
-  bool operator!=(const TargetTrajectories& other) { return !(*this == other); }
+    bool operator==(const TargetTrajectories &other);
+    bool operator!=(const TargetTrajectories &other) { return !(*this == other); }
 
-  vector_t getDesiredState(scalar_t time) const;
-  vector_t getDesiredInput(scalar_t time) const;
+    vector_t getDesiredState(scalar_t time) const;
+    vector_t getDesiredInput(scalar_t time) const;
 
-  scalar_array_t timeTrajectory;
-  vector_array_t stateTrajectory;
-  vector_array_t inputTrajectory;
+    void setTimeTrajectory(const scalar_array_t &&timeTrajectory) { this->timeTrajectory = std::move(timeTrajectory); }
+    void setStateTrajectory(const vector_array_t &&stateTrajectory) {
+        this->stateTrajectory = std::move(stateTrajectory);
+    }
+    void setInputTrajectory(const vector_array_t &&inputTrajectory) {
+        this->inputTrajectory = std::move(inputTrajectory);
+    }
+
+    scalar_array_t timeTrajectory;
+    vector_array_t stateTrajectory;
+    vector_array_t inputTrajectory;
 };
 
-void swap(TargetTrajectories& lh, TargetTrajectories& rh);
-std::ostream& operator<<(std::ostream& out, const TargetTrajectories& targetTrajectories);
+void swap(TargetTrajectories &lh, TargetTrajectories &rh);
+std::ostream &operator<<(std::ostream &out, const TargetTrajectories &targetTrajectories);
 
 }  // namespace ocs2

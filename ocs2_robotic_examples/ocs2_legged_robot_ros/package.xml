@@ -13,11 +13,15 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>roslib</depend>
+  <depend>sensor_msgs</depend>
   <depend>tf</depend>
   <depend>urdf</depend>
   <depend>kdl_parser</depend>
   <depend>robot_state_publisher</depend>
   <depend>cmake_modules</depend>
+  <depend>grid_map_core</depend>
+  <depend>grid_map_ros</depend>
+  <depend>grid_map_pcl</depend>
 
   <depend>ocs2_core</depend>
   <depend>ocs2_oc</depend>

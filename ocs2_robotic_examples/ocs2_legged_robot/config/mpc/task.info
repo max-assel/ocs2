@@ -13,15 +13,15 @@ model_settings
   phaseTransitionStanceTime     0.4
 
   verboseCppAd                  true
-  recompileLibrariesCppAd       true
+  recompileLibrariesCppAd       false
   modelFolderCppAd              /tmp/ocs2
 }
 
 swing_trajectory_config
 {
-  liftOffVelocity               0.2
-  touchDownVelocity            -0.4
-  swingHeight                   0.1
+  liftOffVelocity               0.95
+  touchDownVelocity             -0.95
+  swingHeight                   0.14
   touchdownAfterHorizon         0.2
   swingTimeScale                0.15
 }
@@ -73,7 +73,7 @@ ipm
   fractionToBoundaryMargin              0.995
   usePrimalStepSizeForDual              false
 
-  initialSlackLowerBound                1e-4
+  initialSlackLowerBound                1e-4  
   initialDualLowerBound                 1e-4
   initialSlackMarginRate                1e-2
   initialDualMarginRate                 1e-2
@@ -107,7 +107,7 @@ ddp
 
   preComputeRiccatiTerms          true
 
-  useFeedbackPolicy               false
+  useFeedbackPolicy               true
 
   strategy                        LINE_SEARCH
   lineSearch
@@ -138,8 +138,8 @@ mpc
 
   debugPrint                      false
 
-  mpcDesiredFrequency             50  ; [Hz]
-  mrtDesiredFrequency             400 ; [Hz]
+  mpcDesiredFrequency             -1  ; [Hz]
+  mrtDesiredFrequency            100 ; [Hz]
 }
 
 initialState
@@ -184,17 +184,17 @@ Q
   (0,0)   15.0     ; vcom_x
   (1,1)   15.0     ; vcom_y
   (2,2)   30.0     ; vcom_z
-  (3,3)   5.0      ; L_x / robotMass
-  (4,4)   10.0     ; L_y / robotMass
+  (3,3)   30.0      ; L_x / robotMass
+  (4,4)   30.0     ; L_y / robotMass
   (5,5)   10.0     ; L_z / robotMass
 
   ;; Base Pose: [position, orientation] ;;
-  (6,6)   500.0    ; p_base_x
-  (7,7)   500.0    ; p_base_y
-  (8,8)   500.0    ; p_base_z
+  (6,6)   1000.0    ; p_base_x
+  (7,7)   1000.0    ; p_base_y
+  (8,8)   1000.0    ; p_base_z
   (9,9)   100.0    ; theta_base_z
-  (10,10) 200.0    ; theta_base_y
-  (11,11) 200.0    ; theta_base_x
+  (10,10) 300.0    ; theta_base_y
+  (11,11) 300.0    ; theta_base_x
 
   ;; Leg Joint Positions: [LF, LH, RF, RH] ;;
   (12,12) 20.0     ; LF_HAA
@@ -231,19 +231,19 @@ R
   (11,11) 1.0       ; right_hind_force
 
   ;; foot velocity relative to base: [LF, LH, RF, RH] (uses the Jacobian at nominal configuration) ;;
-  (12,12) 5000.0    ; x
-  (13,13) 5000.0    ; y
-  (14,14) 5000.0    ; z
-  (15,15) 5000.0    ; x
-  (16,16) 5000.0    ; y
-  (17,17) 5000.0    ; z
-  (18,18) 5000.0    ; x
-  (19,19) 5000.0    ; y
-  (20,20) 5000.0    ; z
-  (21,21) 5000.0    ; x
-  (22,22) 5000.0    ; y
-  (23,23) 5000.0    ; z
-}
+  (12,12) 15000.0    ; x
+  (13,13) 15000.0    ; y
+  (14,14) 15000.0    ; z
+  (15,15) 15000.0    ; x
+  (16,16) 15000.0    ; y
+  (17,17) 15000.0    ; z
+  (18,18) 15000.0    ; x
+  (19,19) 15000.0    ; y
+  (20,20) 15000.0    ; z
+  (21,21) 15000.0    ; x
+  (22,22) 15000.0    ; y
+  (23,23) 15000.0    ; z
+}1
 
 frictionConeSoftConstraint
 {

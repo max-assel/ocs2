@@ -4,9 +4,12 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /RobotModel1
         - /TF1/Frames1
+        - /GridMap1
+        - /Base pose plan1/Frames1
       Splitter Ratio: 0.5
-    Tree Height: 874
+    Tree Height: 727
   - Class: rviz/Selection
     Name: Selection
   - Class: rviz/Tool Properties
@@ -22,7 +25,6 @@ Panels:
     Name: Views
     Splitter Ratio: 0.5
   - Class: rviz/Time
-    Experimental: false
     Name: Time
     SyncMode: 0
     SyncSource: ""
@@ -58,7 +60,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: odom
       Value: true
-    - Alpha: 0.4000000059604645
+    - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -434,6 +436,8 @@ Visualization Manager:
       Visual Enabled: true
     - Class: rviz/TF
       Enabled: true
+      Filter (blacklist): \w+_plan_\w+
+      Filter (whitelist): ""
       Frame Timeout: 15
       Frames:
         All Enabled: false
@@ -581,8 +585,6 @@ Visualization Manager:
           Value: false
         lidar_cage:
           Value: false
-        odom:
-          Value: false
         remote:
           Value: true
         top_shell:
@@ -596,115 +598,126 @@ Visualization Manager:
         wide_angle_camera_rear_camera_parent:
           Value: false
       Marker Alpha: 1
-      Marker Scale: 1
+      Marker Scale: 0.4000000059604645
       Name: TF
-      Show Arrows: true
-      Show Axes: false
+      Show Arrows: false
+      Show Axes: true
       Show Names: false
       Tree:
-        odom:
-          base:
-            LF_HAA:
-              LF_HIP:
-                LF_hip_fixed:
-                  LF_HFE:
-                    LF_THIGH:
-                      LF_thigh_fixed:
-                        LF_KFE:
-                          LF_SHANK:
-                            LF_shank_fixed:
-                              LF_FOOT:
-                                {}
-            LH_HAA:
-              LH_HIP:
-                LH_hip_fixed:
-                  LH_HFE:
-                    LH_THIGH:
-                      LH_thigh_fixed:
-                        LH_KFE:
-                          LH_SHANK:
-                            LH_shank_fixed:
-                              LH_FOOT:
-                                {}
-            RF_HAA:
-              RF_HIP:
-                RF_hip_fixed:
-                  RF_HFE:
-                    RF_THIGH:
-                      RF_thigh_fixed:
-                        RF_KFE:
-                          RF_SHANK:
-                            RF_shank_fixed:
-                              RF_FOOT:
-                                {}
-            RH_HAA:
-              RH_HIP:
-                RH_hip_fixed:
-                  RH_HFE:
-                    RH_THIGH:
-                      RH_thigh_fixed:
-                        RH_KFE:
-                          RH_SHANK:
-                            RH_shank_fixed:
-                              RH_FOOT:
-                                {}
-            base_inertia:
+        LF_HIP:
+          LF_hip_fixed:
+            LF_HFE:
               {}
-            battery:
+        LF_SHANK:
+          LF_shank_fixed:
+            LF_FOOT:
               {}
-            bottom_shell:
+        LF_THIGH:
+          LF_thigh_fixed:
+            LF_KFE:
               {}
-            depth_camera_left_camera:
-              depth_camera_left_camera_parent:
-                depth_camera_left_color_frame:
-                  depth_camera_left_color_optical_frame:
-                    {}
-                depth_camera_left_depth_optical_frame:
+        LH_HIP:
+          LH_hip_fixed:
+            LH_HFE:
+              {}
+        LH_SHANK:
+          LH_shank_fixed:
+            LH_FOOT:
+              {}
+        LH_THIGH:
+          LH_thigh_fixed:
+            LH_KFE:
+              {}
+        RF_HIP:
+          RF_hip_fixed:
+            RF_HFE:
+              {}
+        RF_SHANK:
+          RF_shank_fixed:
+            RF_FOOT:
+              {}
+        RF_THIGH:
+          RF_thigh_fixed:
+            RF_KFE:
+              {}
+        RH_HIP:
+          RH_hip_fixed:
+            RH_HFE:
+              {}
+        RH_SHANK:
+          RH_shank_fixed:
+            RH_FOOT:
+              {}
+        RH_THIGH:
+          RH_thigh_fixed:
+            RH_KFE:
+              {}
+        base:
+          LF_HAA:
+            {}
+          LH_HAA:
+            {}
+          RF_HAA:
+            {}
+          RH_HAA:
+            {}
+          base_inertia:
+            {}
+          battery:
+            {}
+          bottom_shell:
+            {}
+          depth_camera_left_camera:
+            depth_camera_left_camera_parent:
+              depth_camera_left_color_frame:
+                depth_camera_left_color_optical_frame:
                   {}
-            depth_camera_right_camera:
-              depth_camera_right_camera_parent:
-                depth_camera_right_color_frame:
-                  depth_camera_right_color_optical_frame:
-                    {}
-                depth_camera_right_depth_optical_frame:
-                  {}
-            docking_hatch_cover:
-              {}
-            face_front:
-              depth_camera_front_camera:
-                depth_camera_front_camera_parent:
-                  depth_camera_front_color_frame:
-                    depth_camera_front_color_optical_frame:
-                      {}
-                  depth_camera_front_depth_optical_frame:
-                    {}
-              wide_angle_camera_front_camera:
-                wide_angle_camera_front_camera_parent:
-                  {}
-            face_rear:
-              depth_camera_rear_camera:
-                depth_camera_rear_camera_parent:
-                  depth_camera_rear_color_frame:
-                    depth_camera_rear_color_optical_frame:
-                      {}
-                  depth_camera_rear_depth_optical_frame:
-                    {}
-              wide_angle_camera_rear_camera:
-                wide_angle_camera_rear_camera_parent:
-                  {}
-            handle:
-              {}
-            hatch:
-              {}
-            imu_link:
-              {}
-            lidar_cage:
-              lidar:
+              depth_camera_left_depth_optical_frame:
                 {}
-            remote:
+          depth_camera_right_camera:
+            depth_camera_right_camera_parent:
+              depth_camera_right_color_frame:
+                depth_camera_right_color_optical_frame:
+                  {}
+              depth_camera_right_depth_optical_frame:
+                {}
+          docking_hatch_cover:
+            {}
+          face_front:
+            depth_camera_front_camera:
+              depth_camera_front_camera_parent:
+                depth_camera_front_color_frame:
+                  depth_camera_front_color_optical_frame:
+                    {}
+                depth_camera_front_depth_optical_frame:
+                  {}
+            wide_angle_camera_front_camera:
+              wide_angle_camera_front_camera_parent:
+                {}
+          face_rear:
+            depth_camera_rear_camera:
+              depth_camera_rear_camera_parent:
+                depth_camera_rear_color_frame:
+                  depth_camera_rear_color_optical_frame:
+                    {}
+                depth_camera_rear_depth_optical_frame:
+                  {}
+            wide_angle_camera_rear_camera:
+              wide_angle_camera_rear_camera_parent:
+                {}
+          handle:
+            {}
+          hatch:
+            {}
+          imu_link:
+            {}
+          lidar_cage:
+            lidar:
               {}
-            top_shell:
-              {}
+          remote:
+            {}
+          top_shell:
+            {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -712,8 +725,7 @@ Visualization Manager:
       Marker Topic: /legged_robot/optimizedStateTrajectory
       Name: Optimized State Trajectory
       Namespaces:
-        CoM Trajectory: true
-        EE Trajectories: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -721,10 +733,7 @@ Visualization Manager:
       Marker Topic: /legged_robot/currentState
       Name: Current State
       Namespaces:
-        Center of Pressure: true
-        EE Forces: true
-        EE Positions: true
-        Support Polygon: true
+        {}
       Queue Size: 100
       Value: true
     - Class: rviz/Group
@@ -766,21 +775,21 @@ Visualization Manager:
           Enabled: false
           Name: Target Feet Trajectories
         - Class: rviz/Marker
-          Enabled: true
+          Enabled: false
           Marker Topic: /legged_robot/desiredBaseTrajectory
           Name: Target Base Trajectory
           Namespaces:
             {}
           Queue Size: 100
-          Value: true
+          Value: false
       Enabled: true
       Name: Target Trajectories
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
-      Color: 200; 200; 200
+      Color: 46; 52; 54
       Color Layer: elevation
-      Color Transformer: GridMapLayer
+      Color Transformer: FlatColor
       Enabled: true
       Height Layer: elevation
       Height Transformer: GridMapLayer
@@ -792,9 +801,43 @@ Visualization Manager:
       Min Intensity: 0
       Name: GridMap
       Show Grid Lines: true
-      Topic: /raisim_heightmap
+      Topic: /gridmap
       Unreliable: false
       Use Rainbow: true
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): base_plan\w+
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Alpha: 1
+      Marker Scale: 1
+      Name: Base pose plan
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: true
+    - Class: rviz/TF
+      Enabled: true
+      Filter (blacklist): ""
+      Filter (whitelist): \w+_FOOT_plan
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Alpha: 1
+      Marker Scale: 0.30000001192092896
+      Name: Foothold plan
+      Show Arrows: false
+      Show Axes: true
+      Show Names: false
+      Tree:
+        {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
@@ -822,7 +865,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.5402400493621826
+      Distance: 4.147664546966553
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -830,25 +873,25 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.17801520228385925
-        Y: 0.39354705810546875
-        Z: 0.4320068359375
+        X: -0.16920031607151031
+        Y: 0.026889853179454803
+        Z: 0.3147944509983063
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.3903983533382416
+      Pitch: 0.37039870023727417
       Target Frame: <Fixed Frame>
-      Yaw: 2.2036001682281494
+      Yaw: 1.203604817390442
     Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
-  Height: 1163
+  Height: 1016
   Hide Left Dock: false
   Hide Right Dock: false
-  QMainWindow State: 000000ff00000000fd00000004000000000000015600000431fc020000000afb0000001200530065006c0065006300740069006f006e000000006e000000b00000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000006e000004770000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d00000431000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006101000001be000001900000000000000000fb000000100044006900730070006c006100790073000000006e00000247000000c900ffffff000000010000010f000002e2fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000002e2000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006400000003efc0100000002fb0000000800540069006d0065000000000000000640000002eb00fffffffb0000000800540069006d00650100000000000004500000000000000000000005dc0000043100000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
+  QMainWindow State: 000000ff00000000fd0000000400000000000001560000039efc020000000afb0000001200530065006c0065006300740069006f006e000000006e000000b00000005c00fffffffb0000001e0054006f006f006c002000500072006f0070006500720074006900650073000000006e000004770000005c00fffffffb000000120056006900650077007300200054006f006f02000001df000002110000018500000122fb000000200054006f006f006c002000500072006f0070006500720074006900650073003203000002880000011d000002210000017afb000000100044006900730070006c006100790073010000003d0000039e000000c900fffffffb0000002000730065006c0065006300740069006f006e00200062007500660066006500720200000138000000aa0000023a00000294fb00000014005700690064006500530074006500720065006f02000000e6000000d2000003ee0000030bfb0000000c004b0069006e0065006300740200000186000001060000030c00000261fb0000000c00430061006d00650072006101000001be000001900000000000000000fb000000100044006900730070006c006100790073000000006e00000247000000c900ffffff000000010000010f000002e2fc0200000003fb0000001e0054006f006f006c002000500072006f00700065007200740069006500730100000041000000780000000000000000fb0000000a005600690065007700730000000028000002e2000000a400fffffffb0000001200530065006c0065006300740069006f006e010000025a000000b200000000000000000000000200000490000000a9fc0100000001fb0000000a00560069006500770073030000004e00000080000002e10000019700000003000006400000003efc0100000002fb0000000800540069006d00650000000000000006400000041800fffffffb0000000800540069006d00650100000000000004500000000000000000000005f20000039e00000004000000040000000800000008fc0000000100000002000000010000000a0054006f006f006c00730100000000ffffffff0000000000000000
   Selection:
     collapsed: false
   Time:
@@ -857,6 +900,6 @@ Window Geometry:
     collapsed: false
   Views:
     collapsed: false
-  Width: 1848
-  X: 1992
-  Y: 0
+  Width: 1870
+  X: 50
+  Y: 27

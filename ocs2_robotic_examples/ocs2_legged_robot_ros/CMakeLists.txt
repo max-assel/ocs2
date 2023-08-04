@@ -6,6 +6,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 set(CATKIN_PACKAGE_DEPENDENCIES
   roslib
+  sensor_msgs
   cmake_modules
   tf
   urdf
@@ -24,6 +25,9 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   ocs2_msgs
   ocs2_ros_interfaces
   ocs2_legged_robot
+  grid_map_core
+  grid_map_ros
+  grid_map_pcl
 )
 
 find_package(catkin REQUIRED COMPONENTS
@@ -78,6 +82,9 @@ add_library(${PROJECT_NAME}
   src/gait/GaitKeyboardPublisher.cpp
   src/gait/GaitReceiver.cpp
   src/visualization/LeggedRobotVisualizer.cpp
+  src/reference_generator/ReferenceGenerator.cpp
+  src/reference_generator/AnymalInverseKinematics.cpp
+  src/reference_generator/GridMapInterface.cpp
 )
 add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}

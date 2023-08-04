@@ -44,3 +44,11 @@ defaultModeSequenceTemplate
     [1]  1.0
   }
 }
+
+; Anymal robot geometry information
+body_length     0.7196
+body_width      0.208
+l1              0.0
+l2              0.19716
+l3              0.285
+l4              0.34923
