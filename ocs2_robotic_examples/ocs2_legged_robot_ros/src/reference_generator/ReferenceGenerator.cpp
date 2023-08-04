@@ -39,6 +39,8 @@ constexpr float VX_MAX_VELOCITY = 0.3;
 constexpr float VY_MAX_VELOCITY = 0.2;
 constexpr float YAW_RATE_MAX_VELOCITY = 0.5;
 
+constexpr scalar_t BUFFER_SIZE = 100;
+
 ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string &referenceFile,
                                        const CentroidalModelInfo &modelInfo,
                                        ReferenceManagerInterface &referenceManager,
@@ -58,7 +60,8 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
       gridMapInterface_(nh, gridMapTopic),
       gaitSchedule_(gaitSchedule),
       counter(0),
-      teps_(1e-6) {
+      teps_(1e-6),
+      genTimes_(BUFFER_SIZE) {
     // Setup joystick subscriber
     auto joy_callback = [this](const sensor_msgs::Joy::ConstPtr &msg) {
         this->vx_ = msg->axes[1] * VX_MAX_VELOCITY;
@@ -142,11 +145,13 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     auto duration_t10 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t10 - start_t10).count() / 1e3;
 
     auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() / 1e3;
+
+    genTimes_.push_back(duration);
 
     // Print statistics
     constexpr size_t STATISTICS_PRINT_INTERVAL = 33;
     if (counter == STATISTICS_PRINT_INTERVAL) {
-        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_time - start_time).count() / 1e3;
         std::cout << std::fixed << std::setprecision(2);
         std::cout << "Reference generation took " << duration << " us" << NEWLINE;
         std::cout << "Computing sampling times took " << duration_t1 << " us" << NEWLINE;
@@ -159,9 +164,8 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
         std::cout << "Computing inverse kinematics took " << duration_t8 << " us" << NEWLINE;
         std::cout << "Generating reference trajectory took " << duration_t9 << " us" << NEWLINE;
         std::cout << "Setting reference trajectory took " << duration_t10 << " us" << NEWLINE;
-        std::cout << "Last base pose: " << baseTrajectory_.back().transpose() << NEWLINE;
-        std::cout << samplingTimes_.size() << " sampling times" << NEWLINE;
-        std::cout << footTrajectories_.size() << " foot trajectories" << NEWLINE;
+        std::cout << "Average generation time: "
+                  << std::accumulate(genTimes_.begin(), genTimes_.end(), 0.0) / genTimes_.size() << " us" << NEWLINE;
         std::cout << std::endl;
         counter = 0;
     } else {
@@ -327,25 +331,6 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
         }
     }
 
-    // for (size_t ii = idxLower_; ii <= idxUpper_; ++ii) {
-    //     size_t i_st = ii - idxLower_ + static_cast<size_t>(initTimeIncludee);
-    //     for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-    //         FootState state = getFootState(contactFlagsAt_[i_st][legIdx], contactFlagsNext_[i_st][legIdx]);
-    //         switch (state) {
-    //             case FootState::NEW_CONTACT: {
-    //                 scalar_t x = footTrajectories_[i_st][legIdx][X_IDX];
-    //                 scalar_t y = footTrajectories_[i_st][legIdx][Y_IDX];
-    //                 touchDownHeightSequence_[legIdx][ii] = gridMapInterface_.atPosition(x, y);
-    //             } break;
-    //             case FootState::NEW_SWING: {
-    //                 scalar_t x = footTrajectories_[i_st][legIdx][X_IDX];
-    //                 scalar_t y = footTrajectories_[i_st][legIdx][Y_IDX];
-    //                 liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPosition(x, y);
-    //             } break;
-    //         }
-    //     }
-    // }
-
     // 4. fill out the rest of the lift-off and touchdown sequences
     for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
         for (size_t ii = idxUpper_ + 1; ii < eventTimes.size(); ++ii) {
@@ -353,16 +338,6 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
             touchDownHeightSequence_[legIdx][ii] = touchDownHeightSequence_[legIdx][idxUpper_];
         }
     }
-
-    // std::cout << "Lift-off height sequence: ";
-    // for (size_t i = idxLower_; i <= idxUpper_; ++i) {
-    //     std::cout << liftOffHeightSequence_[0][i] << " ";
-    // }
-    // std::cout << NEWLINE << "Touch-down height sequence: ";
-    // for (size_t i = idxLower_; i <= idxUpper_; ++i) {
-    //     std::cout << touchDownHeightSequence_[0][i] << " ";
-    // }
-    // std::cout << NEWLINE << std::endl;
 
     // 5. Update swing trajectory planner
     swingTrajectoryPlannerPtr_->update(modeSchedule, liftOffHeightSequence_, touchDownHeightSequence_);

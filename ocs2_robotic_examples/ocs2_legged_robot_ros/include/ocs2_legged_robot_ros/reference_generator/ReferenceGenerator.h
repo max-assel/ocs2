@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <array>
 #include <ros/ros.h>
+#include <boost/circular_buffer.hpp>
 
 #include <ocs2_legged_robot_ros/reference_generator/AnymalInverseKinematics.h>
 #include <ocs2_legged_robot_ros/reference_generator/GridMapInterface.h>
@@ -106,6 +107,9 @@ class ReferenceGenerator : public SolverSynchronizedModule {
 
     // Book keeping
     size_t counter;
+
+    // Statistics
+    boost::circular_buffer<scalar_t> genTimes_;
 };
 
 }  // namespace legged_robot
