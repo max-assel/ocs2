@@ -4,9 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /RobotModel1
         - /TF1/Frames1
-        - /GridMap1
         - /Base pose plan1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 727
@@ -60,7 +58,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: odom
       Value: true
-    - Alpha: 1
+    - Alpha: 0.5
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -585,6 +583,8 @@ Visualization Manager:
           Value: false
         lidar_cage:
           Value: false
+        odom:
+          Value: true
         remote:
           Value: true
         top_shell:
@@ -604,120 +604,109 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        LF_HIP:
-          LF_hip_fixed:
-            LF_HFE:
+        odom:
+          base:
+            LF_HAA:
+              LF_HIP:
+                LF_hip_fixed:
+                  LF_HFE:
+                    LF_THIGH:
+                      LF_thigh_fixed:
+                        LF_KFE:
+                          LF_SHANK:
+                            LF_shank_fixed:
+                              LF_FOOT:
+                                {}
+            LH_HAA:
+              LH_HIP:
+                LH_hip_fixed:
+                  LH_HFE:
+                    LH_THIGH:
+                      LH_thigh_fixed:
+                        LH_KFE:
+                          LH_SHANK:
+                            LH_shank_fixed:
+                              LH_FOOT:
+                                {}
+            RF_HAA:
+              RF_HIP:
+                RF_hip_fixed:
+                  RF_HFE:
+                    RF_THIGH:
+                      RF_thigh_fixed:
+                        RF_KFE:
+                          RF_SHANK:
+                            RF_shank_fixed:
+                              RF_FOOT:
+                                {}
+            RH_HAA:
+              RH_HIP:
+                RH_hip_fixed:
+                  RH_HFE:
+                    RH_THIGH:
+                      RH_thigh_fixed:
+                        RH_KFE:
+                          RH_SHANK:
+                            RH_shank_fixed:
+                              RH_FOOT:
+                                {}
+            base_inertia:
               {}
-        LF_SHANK:
-          LF_shank_fixed:
-            LF_FOOT:
+            battery:
               {}
-        LF_THIGH:
-          LF_thigh_fixed:
-            LF_KFE:
+            bottom_shell:
               {}
-        LH_HIP:
-          LH_hip_fixed:
-            LH_HFE:
-              {}
-        LH_SHANK:
-          LH_shank_fixed:
-            LH_FOOT:
-              {}
-        LH_THIGH:
-          LH_thigh_fixed:
-            LH_KFE:
-              {}
-        RF_HIP:
-          RF_hip_fixed:
-            RF_HFE:
-              {}
-        RF_SHANK:
-          RF_shank_fixed:
-            RF_FOOT:
-              {}
-        RF_THIGH:
-          RF_thigh_fixed:
-            RF_KFE:
-              {}
-        RH_HIP:
-          RH_hip_fixed:
-            RH_HFE:
-              {}
-        RH_SHANK:
-          RH_shank_fixed:
-            RH_FOOT:
-              {}
-        RH_THIGH:
-          RH_thigh_fixed:
-            RH_KFE:
-              {}
-        base:
-          LF_HAA:
-            {}
-          LH_HAA:
-            {}
-          RF_HAA:
-            {}
-          RH_HAA:
-            {}
-          base_inertia:
-            {}
-          battery:
-            {}
-          bottom_shell:
-            {}
-          depth_camera_left_camera:
-            depth_camera_left_camera_parent:
-              depth_camera_left_color_frame:
-                depth_camera_left_color_optical_frame:
-                  {}
-              depth_camera_left_depth_optical_frame:
-                {}
-          depth_camera_right_camera:
-            depth_camera_right_camera_parent:
-              depth_camera_right_color_frame:
-                depth_camera_right_color_optical_frame:
-                  {}
-              depth_camera_right_depth_optical_frame:
-                {}
-          docking_hatch_cover:
-            {}
-          face_front:
-            depth_camera_front_camera:
-              depth_camera_front_camera_parent:
-                depth_camera_front_color_frame:
-                  depth_camera_front_color_optical_frame:
+            depth_camera_left_camera:
+              depth_camera_left_camera_parent:
+                depth_camera_left_color_frame:
+                  depth_camera_left_color_optical_frame:
                     {}
-                depth_camera_front_depth_optical_frame:
+                depth_camera_left_depth_optical_frame:
                   {}
-            wide_angle_camera_front_camera:
-              wide_angle_camera_front_camera_parent:
-                {}
-          face_rear:
-            depth_camera_rear_camera:
-              depth_camera_rear_camera_parent:
-                depth_camera_rear_color_frame:
-                  depth_camera_rear_color_optical_frame:
+            depth_camera_right_camera:
+              depth_camera_right_camera_parent:
+                depth_camera_right_color_frame:
+                  depth_camera_right_color_optical_frame:
                     {}
-                depth_camera_rear_depth_optical_frame:
+                depth_camera_right_depth_optical_frame:
                   {}
-            wide_angle_camera_rear_camera:
-              wide_angle_camera_rear_camera_parent:
-                {}
-          handle:
-            {}
-          hatch:
-            {}
-          imu_link:
-            {}
-          lidar_cage:
-            lidar:
+            docking_hatch_cover:
               {}
-          remote:
-            {}
-          top_shell:
-            {}
+            face_front:
+              depth_camera_front_camera:
+                depth_camera_front_camera_parent:
+                  depth_camera_front_color_frame:
+                    depth_camera_front_color_optical_frame:
+                      {}
+                  depth_camera_front_depth_optical_frame:
+                    {}
+              wide_angle_camera_front_camera:
+                wide_angle_camera_front_camera_parent:
+                  {}
+            face_rear:
+              depth_camera_rear_camera:
+                depth_camera_rear_camera_parent:
+                  depth_camera_rear_color_frame:
+                    depth_camera_rear_color_optical_frame:
+                      {}
+                  depth_camera_rear_depth_optical_frame:
+                    {}
+              wide_angle_camera_rear_camera:
+                wide_angle_camera_rear_camera_parent:
+                  {}
+            handle:
+              {}
+            hatch:
+              {}
+            imu_link:
+              {}
+            lidar_cage:
+              lidar:
+                {}
+            remote:
+              {}
+            top_shell:
+              {}
       Update Interval: 0
       Value: true
     - Class: rviz/MarkerArray
@@ -725,7 +714,9 @@ Visualization Manager:
       Marker Topic: /legged_robot/optimizedStateTrajectory
       Name: Optimized State Trajectory
       Namespaces:
-        {}
+        CoM Trajectory: true
+        EE Trajectories: true
+        Future footholds: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -733,7 +724,10 @@ Visualization Manager:
       Marker Topic: /legged_robot/currentState
       Name: Current State
       Namespaces:
-        {}
+        Center of Pressure: true
+        EE Forces: true
+        EE Positions: true
+        Support Polygon: true
       Queue Size: 100
       Value: true
     - Class: rviz/Group
@@ -812,6 +806,22 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_plan_frame_0:
+          Value: true
+        base_plan_frame_1:
+          Value: true
+        base_plan_frame_2:
+          Value: true
+        base_plan_frame_3:
+          Value: true
+        base_plan_frame_4:
+          Value: true
+        base_plan_frame_5:
+          Value: true
+        base_plan_frame_6:
+          Value: true
+        base_plan_frame_7:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: Base pose plan
@@ -819,7 +829,22 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        base_plan_frame_0:
+          {}
+        base_plan_frame_1:
+          {}
+        base_plan_frame_2:
+          {}
+        base_plan_frame_3:
+          {}
+        base_plan_frame_4:
+          {}
+        base_plan_frame_5:
+          {}
+        base_plan_frame_6:
+          {}
+        base_plan_frame_7:
+          {}
       Update Interval: 0
       Value: true
     - Class: rviz/TF
@@ -829,6 +854,62 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        LF_FOOT_plan_frame_1:
+          Value: true
+        LF_FOOT_plan_frame_2:
+          Value: true
+        LF_FOOT_plan_frame_3:
+          Value: true
+        LF_FOOT_plan_frame_4:
+          Value: true
+        LF_FOOT_plan_frame_5:
+          Value: true
+        LF_FOOT_plan_frame_6:
+          Value: true
+        LF_FOOT_plan_frame_7:
+          Value: true
+        LH_FOOT_plan_frame_1:
+          Value: true
+        LH_FOOT_plan_frame_2:
+          Value: true
+        LH_FOOT_plan_frame_3:
+          Value: true
+        LH_FOOT_plan_frame_4:
+          Value: true
+        LH_FOOT_plan_frame_5:
+          Value: true
+        LH_FOOT_plan_frame_6:
+          Value: true
+        LH_FOOT_plan_frame_7:
+          Value: true
+        RF_FOOT_plan_frame_1:
+          Value: true
+        RF_FOOT_plan_frame_2:
+          Value: true
+        RF_FOOT_plan_frame_3:
+          Value: true
+        RF_FOOT_plan_frame_4:
+          Value: true
+        RF_FOOT_plan_frame_5:
+          Value: true
+        RF_FOOT_plan_frame_6:
+          Value: true
+        RF_FOOT_plan_frame_7:
+          Value: true
+        RH_FOOT_plan_frame_1:
+          Value: true
+        RH_FOOT_plan_frame_2:
+          Value: true
+        RH_FOOT_plan_frame_3:
+          Value: true
+        RH_FOOT_plan_frame_4:
+          Value: true
+        RH_FOOT_plan_frame_5:
+          Value: true
+        RH_FOOT_plan_frame_6:
+          Value: true
+        RH_FOOT_plan_frame_7:
+          Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
       Name: Foothold plan
@@ -836,7 +917,62 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        {}
+        LF_FOOT_plan_frame_1:
+          {}
+        LF_FOOT_plan_frame_2:
+          {}
+        LF_FOOT_plan_frame_3:
+          {}
+        LF_FOOT_plan_frame_4:
+          {}
+        LF_FOOT_plan_frame_5:
+          {}
+        LF_FOOT_plan_frame_6:
+          {}
+        LF_FOOT_plan_frame_7:
+          {}
+        LH_FOOT_plan_frame_1:
+          {}
+        LH_FOOT_plan_frame_2:
+          {}
+        LH_FOOT_plan_frame_3:
+          {}
+        LH_FOOT_plan_frame_4:
+          {}
+        LH_FOOT_plan_frame_5:
+          {}
+        LH_FOOT_plan_frame_6:
+          {}
+        LH_FOOT_plan_frame_7:
+          {}
+        RF_FOOT_plan_frame_1:
+          {}
+        RF_FOOT_plan_frame_2:
+          {}
+        RF_FOOT_plan_frame_3:
+          {}
+        RF_FOOT_plan_frame_4:
+          {}
+        RF_FOOT_plan_frame_5:
+          {}
+        RF_FOOT_plan_frame_6:
+          {}
+        RF_FOOT_plan_frame_7:
+          {}
+        RH_FOOT_plan_frame_1:
+          {}
+        RH_FOOT_plan_frame_2:
+          {}
+        RH_FOOT_plan_frame_3:
+          {}
+        RH_FOOT_plan_frame_4:
+          {}
+        RH_FOOT_plan_frame_5:
+          {}
+        RH_FOOT_plan_frame_6:
+          {}
+        RH_FOOT_plan_frame_7:
+          {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -873,9 +1009,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.16920031607151031
-        Y: 0.026889853179454803
-        Z: 0.3147944509983063
+        X: -2.6158955097198486
+        Y: 1.2111892700195312
+        Z: -0.2697732746601105
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
