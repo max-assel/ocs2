@@ -42,8 +42,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
    private:
     void computeSamplingTimes(scalar_t initTime, scalar_t finalTime, const ReferenceManagerInterface &referenceManager);
     void computeContactFlags(const ReferenceManagerInterface &referenceManager);
-    void computeBaseTrajectoryXY(const vector_t &currentState);
-    void computeFootTrajectoriesXY(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
+    void computeTrajectoryXY(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
     void setContactHeights(scalar_t currentTime);
     void computeFootTrajectoriesZ();
     void computeBaseTrajectoryZ();
@@ -58,7 +57,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     vector3_t getProjectedHipPosition(const vector6_t &basePose, size_t legIdx);
     vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
-    void optimizeFoothold(vector3_t &nominalFoothold, const scalar_t radius);
+    void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius);
 
     void generateFootName2IndexMap();
     void generateHipShiftMap();

@@ -104,13 +104,14 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
 
     // Compute base trajectory
     auto start_t3 = std::chrono::high_resolution_clock::now();
-    computeBaseTrajectoryXY(currentState);
+    computeTrajectoryXY(currentState, referenceManager);
+    // computeBaseTrajectoryXY(currentState);
     auto end_t3 = std::chrono::high_resolution_clock::now();
     auto duration_t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t3 - start_t3).count() / 1e3;
 
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
-    computeFootTrajectoriesXY(currentState, referenceManager);
+    // computeFootTrajectoriesXY(currentState, referenceManager);
     auto end_t4 = std::chrono::high_resolution_clock::now();
     auto duration_t4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t4 - start_t4).count() / 1e3;
 
@@ -226,7 +227,8 @@ void ReferenceGenerator::computeContactFlags(const ReferenceManagerInterface &re
     computeContactFlags(contactFlagsNext_, teps_);
 }
 
-void ReferenceGenerator::computeBaseTrajectoryXY(const vector_t &currentState) {
+void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
+                                             const ReferenceManagerInterface &referenceManager) {
     // 1. Set trajectory size
     baseTrajectory_.clear();
     baseTrajectory_.reserve(samplingTimes_.size());
@@ -238,10 +240,38 @@ void ReferenceGenerator::computeBaseTrajectoryXY(const vector_t &currentState) {
     basePose[PITCH_IDX] = 0.0;
     basePose[ROLL_IDX] = 0.0;
 
-    // 4. generate trajectory
+    // 4. Compute forward kinematics
+    const auto &model = pinocchioInterface_.getModel();
+    auto &data = pinocchioInterface_.getData();
+    pinocchio::forwardKinematics(model, data, centroidal_model::getGeneralizedCoordinates(currentState, modelInfo_));
+    for (const std::string &footName : modelSettings_.contactNames3DoF) {
+        pinocchio::updateFramePlacement(model, data, model.getFrameId(footName));
+    }
+
+    // 5. Set initial base position
     baseTrajectory_.push_back(basePose);
+
+    // 6. Set initial foot position
+    auto setInitialFootPosition = [this, &model, &data](const std::string &footName) {
+        footTrajectories_[0][footName2Index(footName)] = data.oMf[model.getFrameId(footName)].translation();
+    };
+    footTrajectories_.clear();
+    footTrajectories_.resize(samplingTimes_.size());
+    for (const std::string &footName : modelSettings_.contactNames3DoF) {
+        setInitialFootPosition(footName);
+    }
+
+    // 6. Get mode schedule
+    const auto &modeSchedule = referenceManager.getModeSchedule();
+
+    // 7. generate trajectory
+
+    // 4. Compute the rest of trajectory
     scalar_t time_delta, yaw_s, yaw_c, vx, vy;
     for (size_t i = 1; i < samplingTimes_.size(); ++i) {
+        // BASE
+        basePose = baseTrajectory_[i - 1];
+
         time_delta = samplingTimes_[i] - samplingTimes_[i - 1];
         yaw_s = std::sin(basePose[YAW_IDX]);
         yaw_c = std::cos(basePose[YAW_IDX]);
@@ -256,6 +286,33 @@ void ReferenceGenerator::computeBaseTrajectoryXY(const vector_t &currentState) {
         basePose[YAW_IDX] += yrate_ * time_delta;
 
         baseTrajectory_.push_back(basePose);
+
+        // FEET
+        auto swingPhases = getSwingPhasePerLeg(samplingTimes_[i], modeSchedule);
+        for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
+            FootState state = getFootState(contactFlagsAt_[i][legIdx], contactFlagsNext_[i][legIdx]);
+            switch (state) {
+                case FootState::CONTACT:  // deliberate fall-through
+                case FootState::NEW_SWING:
+                    footTrajectories_[i][legIdx] = footTrajectories_[i - 1][legIdx];  // copy the last position
+                    break;
+                case FootState::NEW_CONTACT: {
+                    scalar_t stanceTime = getStanceTime();
+                    const scalar_t phase = 1.0;
+                    footTrajectories_[i][legIdx] = raibertHeuristic(
+                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                    if (optimizeFootholds_) {
+                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], 0.25);
+                    }
+                } break;
+                case FootState::SWING: {
+                    scalar_t stanceTime = getStanceTime();
+                    const scalar_t phase = swingPhases[legIdx].phase;
+                    footTrajectories_[i][legIdx] = raibertHeuristic(
+                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                } break;  // raibert heuristic -> phase = whatever ocs2 tells us
+            }
+        }
     }
 }
 
@@ -347,60 +404,6 @@ void ReferenceGenerator::computeFootTrajectoriesZ() {
     }
 }
 
-void ReferenceGenerator::computeFootTrajectoriesXY(const vector_t &currentState,
-                                                   const ReferenceManagerInterface &referenceManager) {
-    // 1. Compute forward kinematics
-    const auto &model = pinocchioInterface_.getModel();
-    auto &data = pinocchioInterface_.getData();
-    pinocchio::forwardKinematics(model, data, centroidal_model::getGeneralizedCoordinates(currentState, modelInfo_));
-    for (const std::string &footName : modelSettings_.contactNames3DoF) {
-        pinocchio::updateFramePlacement(model, data, model.getFrameId(footName));
-    }
-
-    auto setInitialFootPosition = [this, &model, &data](const std::string &footName) {
-        footTrajectories_[0][footName2Index(footName)] = data.oMf[model.getFrameId(footName)].translation();
-    };
-
-    // 2. Set initial foot position
-    footTrajectories_.clear();
-    footTrajectories_.resize(samplingTimes_.size());
-    for (const std::string &footName : modelSettings_.contactNames3DoF) {
-        setInitialFootPosition(footName);
-    }
-
-    // 3. Get mode schedule
-    const auto &modeSchedule = referenceManager.getModeSchedule();
-
-    // 4. Compute the rest of the foot trajectory
-    for (size_t i = 1; i < samplingTimes_.size(); ++i) {
-        auto swingPhases = getSwingPhasePerLeg(samplingTimes_[i], modeSchedule);
-        for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-            FootState state = getFootState(contactFlagsAt_[i][legIdx], contactFlagsNext_[i][legIdx]);
-            switch (state) {
-                case FootState::CONTACT:  // deliberate fall-through
-                case FootState::NEW_SWING:
-                    footTrajectories_[i][legIdx] = footTrajectories_[i - 1][legIdx];  // copy the last position
-                    break;
-                case FootState::NEW_CONTACT: {
-                    scalar_t stanceTime = getStanceTime();
-                    const scalar_t phase = 1.0;
-                    footTrajectories_[i][legIdx] = raibertHeuristic(
-                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
-                    if (optimizeFootholds_) {
-                        optimizeFoothold(footTrajectories_[i][legIdx], 0.25);
-                    }
-                } break;
-                case FootState::SWING: {
-                    scalar_t stanceTime = getStanceTime();
-                    const scalar_t phase = swingPhases[legIdx].phase;
-                    footTrajectories_[i][legIdx] = raibertHeuristic(
-                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
-                } break;  // raibert heuristic -> phase = whatever ocs2 tells us
-            }
-        }
-    }
-}
-
 void ReferenceGenerator::computeInverseKinematics(const vector_t &currentState) {
     jointTrajectories_.clear();
     jointTrajectories_.reserve(samplingTimes_.size());
@@ -470,7 +473,8 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
     return phase * (hipPosition + (stanceTime / 2.0) * vWorld) + (1.0 - phase) * footPositionPrev;
 }
 
-void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, const scalar_t radius) {
+void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose,
+                                          const scalar_t radius) {
     scalar_t best_score = gridMapInterface_.atPositionRoughness(nominalFoothold[0], nominalFoothold[1]);
     const auto &map = gridMapInterface_.getMap();
     const grid_map::Position pos = nominalFoothold.head<2>();
@@ -485,6 +489,8 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, const scal
             nominalFoothold.head<2>() = pos2;
         }
     }
+
+    nominalBasePose.head<2>() += (nominalFoothold.head<2>() - pos) / 4.0;
 }
 
 void ReferenceGenerator::generateFootName2IndexMap() {

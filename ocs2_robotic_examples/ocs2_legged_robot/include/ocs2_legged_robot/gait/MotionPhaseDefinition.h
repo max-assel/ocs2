@@ -77,16 +77,16 @@ inline contact_flag_t modeNumber2StanceLeg(const size_t& modeNumber) {
       stanceLegs = contact_flag_t{false, false, false, true};
       break;  // 1:  RH
     case 2:
-      stanceLegs = contact_flag_t{false, false, true, false};
+      stanceLegs = contact_flag_t{false, true, false, false};
       break;  // 2:  LH
     case 3:
-      stanceLegs = contact_flag_t{false, false, true, true};
+      stanceLegs = contact_flag_t{false, true, false, true};
       break;  // 3:  RH, LH
     case 4:
-      stanceLegs = contact_flag_t{false, true, false, false};
+      stanceLegs = contact_flag_t{false, false, true, false};
       break;  // 4:  RF
     case 5:
-      stanceLegs = contact_flag_t{false, true, false, true};
+      stanceLegs = contact_flag_t{false, false, true, true};
       break;  // 5:  RF, RH
     case 6:
       stanceLegs = contact_flag_t{false, true, true, false};
@@ -101,16 +101,16 @@ inline contact_flag_t modeNumber2StanceLeg(const size_t& modeNumber) {
       stanceLegs = contact_flag_t{true, false, false, true};
       break;  // 9:  LF, RH
     case 10:
-      stanceLegs = contact_flag_t{true, false, true, false};
+      stanceLegs = contact_flag_t{true, true, false, false};
       break;  // 10: LF, LH
     case 11:
-      stanceLegs = contact_flag_t{true, false, true, true};
+      stanceLegs = contact_flag_t{true, true, false, true};
       break;  // 11: LF, LH, RH
     case 12:
-      stanceLegs = contact_flag_t{true, true, false, false};
+      stanceLegs = contact_flag_t{true, false, true, false};
       break;  // 12: LF, RF
     case 13:
-      stanceLegs = contact_flag_t{true, true, false, true};
+      stanceLegs = contact_flag_t{true, false, true, true};
       break;  // 13: LF, RF, RH
     case 14:
       stanceLegs = contact_flag_t{true, true, true, false};
@@ -127,7 +127,7 @@ inline contact_flag_t modeNumber2StanceLeg(const size_t& modeNumber) {
 /******************************************************************************************************/
 /******************************************************************************************************/
 inline size_t stanceLeg2ModeNumber(const contact_flag_t& stanceLegs) {
-  return static_cast<size_t>(stanceLegs[3]) + 2 * static_cast<size_t>(stanceLegs[2]) + 4 * static_cast<size_t>(stanceLegs[1]) +
+  return static_cast<size_t>(stanceLegs[3]) + 2 * static_cast<size_t>(stanceLegs[1]) + 4 * static_cast<size_t>(stanceLegs[2]) +
          8 * static_cast<size_t>(stanceLegs[0]);
 }
 
