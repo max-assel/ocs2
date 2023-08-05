@@ -289,7 +289,7 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
     const auto &eventTimes = modeSchedule.eventTimes;
 
     const auto &modeSequence = modeSchedule.modeSequence;
-    const auto eesContactFlagStocks = extractContactFlags(modeSequence);  // ADDED
+    const auto eesContactFlagStocks = extractContactFlags(modeSequence);
 
     // 2. resize lift-off and touchdown sequences
     auto resizeArray = [](feet_array_t<scalar_array_t> &arr, size_t size) {
@@ -303,10 +303,10 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
     bool initTimeIncludee = samplingTimes_[0] == currentTime;
 
     // 3. compute lift-off and touchdown sequences
+    scalar_t x1, y1, x2, y2;
     for (size_t ii = idxLower_; ii <= idxUpper_; ++ii) {
         int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + static_cast<int>(initTimeIncludee);
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-            FootState state = getFootState(contactFlagsAt_[i_st][legIdx], contactFlagsNext_[i_st][legIdx]);
             bool cont = eesContactFlagStocks[legIdx][ii];
             if (!cont) {
                 int start, stop;
@@ -316,33 +316,25 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                 if (start < 0) {
                     start = static_cast<int>(initTimeIncludee);
                 }
-                scalar_t x1 = footTrajectories_[start][legIdx][X_IDX];
-                scalar_t y1 = footTrajectories_[start][legIdx][Y_IDX];
+                x1 = footTrajectories_[start][legIdx][X_IDX];
+                y1 = footTrajectories_[start][legIdx][Y_IDX];
                 liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
                 if (stop >= footTrajectories_.size()) {
                     touchDownHeightSequence_[legIdx][ii] = liftOffHeightSequence_[legIdx][ii];
                 } else {
-                    scalar_t x2 = footTrajectories_[stop][legIdx][X_IDX];
-                    scalar_t y2 = footTrajectories_[stop][legIdx][Y_IDX];
+                    x2 = footTrajectories_[stop][legIdx][X_IDX];
+                    y2 = footTrajectories_[stop][legIdx][Y_IDX];
                     touchDownHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x2, y2);
                 }
             } else {
-                scalar_t x = footTrajectories_[i_st][legIdx][X_IDX];
-                scalar_t y = footTrajectories_[i_st][legIdx][Y_IDX];
-                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x, y);
+                x1 = footTrajectories_[i_st][legIdx][X_IDX];
+                y1 = footTrajectories_[i_st][legIdx][Y_IDX];
+                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
             }
         }
     }
 
-    // 4. fill out the rest of the lift-off and touchdown sequences
-    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-        for (size_t ii = idxUpper_ + 1; ii < eventTimes.size(); ++ii) {
-            liftOffHeightSequence_[legIdx][ii] = touchDownHeightSequence_[legIdx][idxUpper_];
-            touchDownHeightSequence_[legIdx][ii] = touchDownHeightSequence_[legIdx][idxUpper_];
-        }
-    }
-
-    // 5. Update swing trajectory planner
+    // 4. Update swing trajectory planner
     swingTrajectoryPlannerPtr_->update(modeSchedule, liftOffHeightSequence_, touchDownHeightSequence_);
 }
 
