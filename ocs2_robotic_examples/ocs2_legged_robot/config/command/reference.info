@@ -53,5 +53,5 @@ l2              0.19716
 l3              0.285
 l4              0.34923
 
-; Should reference consider local terrain information?
-useGridMap false
+useGridMap true
+optimizeFootholds true

@@ -58,6 +58,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     vector3_t getProjectedHipPosition(const vector6_t &basePose, size_t legIdx);
     vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
+    void optimizeFoothold(vector3_t &nominalFoothold, const scalar_t radius);
 
     void generateFootName2IndexMap();
     void generateHipShiftMap();
@@ -98,6 +99,9 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     float vx_;
     float vy_;
     float yrate_;
+
+    // Optimize footholds?
+    bool optimizeFootholds_;
 
     // Default base height above the ground
     scalar_t comHeight_;

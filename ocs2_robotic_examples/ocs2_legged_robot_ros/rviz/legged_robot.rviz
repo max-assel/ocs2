@@ -5,6 +5,7 @@ Panels:
     Property Tree Widget:
       Expanded:
         - /TF1/Frames1
+        - /GridMap1
         - /Base pose plan1/Frames1
       Splitter Ratio: 0.5
     Tree Height: 727
@@ -781,13 +782,16 @@ Visualization Manager:
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 46; 52; 54
-      Color Layer: elevation
-      Color Transformer: FlatColor
+      Color Layer: elevation_roughness
+      Color Transformer: IntensityLayer
+      ColorMap: default
       Enabled: true
+      Grid Cell Decimation: 1
+      Grid Line Thickness: 0.10000000149011612
       Height Layer: elevation
       Height Transformer: GridMapLayer
       History Length: 1
-      Invert Rainbow: false
+      Invert ColorMap: false
       Max Color: 255; 255; 255
       Max Intensity: 10
       Min Color: 0; 0; 0
@@ -796,7 +800,7 @@ Visualization Manager:
       Show Grid Lines: true
       Topic: /gridmap
       Unreliable: false
-      Use Rainbow: true
+      Use ColorMap: true
       Value: true
     - Class: rviz/TF
       Enabled: true
@@ -900,7 +904,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.83194899559021
+      Distance: 3.8514506816864014
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -908,17 +912,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.2385510802268982
-        Y: 0.0976058840751648
-        Z: 0.20893941819667816
+        X: 0.9192506074905396
+        Y: -0.3701134920120239
+        Z: -0.32817625999450684
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.4103986620903015
+      Pitch: 0.5103986859321594
       Target Frame: <Fixed Frame>
-      Yaw: 0.9986050128936768
+      Yaw: 1.638604760169983
     Saved: ~
 Window Geometry:
   Displays:

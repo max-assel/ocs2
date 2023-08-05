@@ -76,6 +76,9 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
     // Load reference joint state
     loadData::loadEigenMatrix(referenceFile, "defaultJointState", defaultJointState_);
 
+    // Should we optimize footholds?
+    loadData::loadCppDataType(referenceFile, "optimizeFootholds", optimizeFootholds_);
+
     // Generate foot name to index map
     generateFootName2IndexMap();
 
@@ -315,18 +318,18 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                 }
                 scalar_t x1 = footTrajectories_[start][legIdx][X_IDX];
                 scalar_t y1 = footTrajectories_[start][legIdx][Y_IDX];
-                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPosition(x1, y1);
+                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
                 if (stop >= footTrajectories_.size()) {
                     touchDownHeightSequence_[legIdx][ii] = liftOffHeightSequence_[legIdx][ii];
                 } else {
                     scalar_t x2 = footTrajectories_[stop][legIdx][X_IDX];
                     scalar_t y2 = footTrajectories_[stop][legIdx][Y_IDX];
-                    touchDownHeightSequence_[legIdx][ii] = gridMapInterface_.atPosition(x2, y2);
+                    touchDownHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x2, y2);
                 }
             } else {
                 scalar_t x = footTrajectories_[i_st][legIdx][X_IDX];
                 scalar_t y = footTrajectories_[i_st][legIdx][Y_IDX];
-                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPosition(x, y);
+                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x, y);
             }
         }
     }
@@ -391,6 +394,9 @@ void ReferenceGenerator::computeFootTrajectoriesXY(const vector_t &currentState,
                     const scalar_t phase = 1.0;
                     footTrajectories_[i][legIdx] = raibertHeuristic(
                         baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                    if (optimizeFootholds_) {
+                        optimizeFoothold(footTrajectories_[i][legIdx], 0.25);
+                    }
                 } break;
                 case FootState::SWING: {
                     scalar_t stanceTime = getStanceTime();
@@ -470,6 +476,23 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
 
     // 3. compute desired foothold
     return phase * (hipPosition + (stanceTime / 2.0) * vWorld) + (1.0 - phase) * footPositionPrev;
+}
+
+void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, const scalar_t radius) {
+    scalar_t best_score = gridMapInterface_.atPositionRoughness(nominalFoothold[0], nominalFoothold[1]);
+    const auto &map = gridMapInterface_.getMap();
+    const grid_map::Position pos = nominalFoothold.head<2>();
+    for (grid_map::CircleIterator iterator(map, pos, radius); !iterator.isPastEnd(); ++iterator) {
+        double score = map.at("elevation_roughness", *iterator);
+        grid_map::Position pos2;
+        map.getPosition(*iterator, pos2);
+        score -= (pos2 - pos).norm();
+
+        if (score > best_score) {
+            best_score = score;
+            nominalFoothold.head<2>() = pos2;
+        }
+    }
 }
 
 void ReferenceGenerator::generateFootName2IndexMap() {

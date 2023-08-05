@@ -2,6 +2,7 @@
 
 // std-lib
 #include <string>
+#include <string>
 
 // ros
 #include <ros/ros.h>
@@ -19,7 +20,9 @@ namespace legged_robot {
 class GridMapInterface {
    public:
     GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap = false);
-    scalar_t atPosition(scalar_t x, scalar_t y);
+    scalar_t atPositionElevation(scalar_t x, scalar_t y);
+    scalar_t atPositionRoughness(scalar_t x, scalar_t y);
+    const grid_map::GridMap &getMap() const { return map_; }
 
    private:
     void mapCallback(const grid_map_msgs::GridMap::ConstPtr &msgPtr);
@@ -27,7 +30,7 @@ class GridMapInterface {
     grid_map::GridMap map_;
     grid_map::Position pos_;
     ::ros::Subscriber mapSubscriber_;
-    std::string layer_;
+    std::vector<std::string> layers_;
     const bool useGridMap_;
 };
 
