@@ -61,7 +61,8 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
       gaitSchedule_(gaitSchedule),
       counter(0),
       teps_(1e-6),
-      genTimes_(BUFFER_SIZE) {
+      genTimes_(BUFFER_SIZE),
+      firstRun_(true) {
     // Setup joystick subscriber
     auto joy_callback = [this](const sensor_msgs::Joy::ConstPtr &msg) {
         this->vx_ = msg->axes[1] * VX_MAX_VELOCITY;
@@ -175,6 +176,8 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     } else {
         ++counter;
     }
+
+    firstRun_ = false;
 }
 
 void ReferenceGenerator::computeSamplingTimes(scalar_t initTime, scalar_t finalTime,
@@ -264,10 +267,11 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
     // 6. Get mode schedule
     const auto &modeSchedule = referenceManager.getModeSchedule();
 
-    // 7. generate trajectory
+    std::array<bool, 4> firstTouchdown = {true, true, true, true};
 
     // 4. Compute the rest of trajectory
     scalar_t time_delta, yaw_s, yaw_c, vx, vy;
+    auto currentswingPhases = getSwingPhasePerLeg(samplingTimes_[0], modeSchedule);
     for (size_t i = 1; i < samplingTimes_.size(); ++i) {
         // BASE
         basePose = baseTrajectory_[i - 1];
@@ -295,6 +299,9 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                 case FootState::CONTACT:  // deliberate fall-through
                 case FootState::NEW_SWING:
                     footTrajectories_[i][legIdx] = footTrajectories_[i - 1][legIdx];  // copy the last position
+                    if (optimizeFootholds_) {
+                        firstTouchdown[legIdx] = false;
+                    }
                     break;
                 case FootState::NEW_CONTACT: {
                     scalar_t stanceTime = getStanceTime();
@@ -302,7 +309,14 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                     footTrajectories_[i][legIdx] = raibertHeuristic(
                         baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
                     if (optimizeFootholds_) {
-                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], 0.25);
+                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], 0.25,
+                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx);
+
+                        if (firstTouchdown[legIdx]) {
+                            nextOptimizedFootholds_[legIdx] = footTrajectories_[i][legIdx];
+                        }
+
+                        firstTouchdown[legIdx] = false;
                     }
                 } break;
                 case FootState::SWING: {
@@ -357,25 +371,29 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
     resizeArray(liftOffHeightSequence_, eventTimes.size());
     resizeArray(touchDownHeightSequence_, eventTimes.size());
 
-    bool initTimeIncludee = samplingTimes_[0] == currentTime;
+    int offset = eventTimes[idxLower_] != currentTime ? 1 : 0;
+
+    static std::array<scalar_t, 4> lastLiftOffHeight = {0.0, 0.0, 0.0, 0.0};
 
     // 3. compute lift-off and touchdown sequences
     scalar_t x1, y1, x2, y2;
     for (size_t ii = idxLower_; ii <= idxUpper_; ++ii) {
-        int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + static_cast<int>(initTimeIncludee);
+        int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + offset;
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
             bool cont = eesContactFlagStocks[legIdx][ii];
             if (!cont) {
                 int start, stop;
                 std::tie(start, stop) = swingTrajectoryPlannerPtr_->findIndex(ii, eesContactFlagStocks[legIdx]);
-                start = static_cast<int>(start) - static_cast<int>(idxLower_) + static_cast<int>(initTimeIncludee);
-                stop = static_cast<int>(stop) - static_cast<int>(idxLower_) + static_cast<int>(initTimeIncludee);
-                if (start < 0) {
-                    start = static_cast<int>(initTimeIncludee);
+                start = offset + static_cast<int>(start) - static_cast<int>(idxLower_);
+                stop = offset + static_cast<int>(stop) - static_cast<int>(idxLower_);
+                if (start < offset) {
+                    liftOffHeightSequence_[legIdx][ii] = lastLiftOffHeight[legIdx];
+                } else {
+                    x1 = footTrajectories_[start][legIdx][X_IDX];
+                    y1 = footTrajectories_[start][legIdx][Y_IDX];
+                    liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
                 }
-                x1 = footTrajectories_[start][legIdx][X_IDX];
-                y1 = footTrajectories_[start][legIdx][Y_IDX];
-                liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
+
                 if (stop >= footTrajectories_.size()) {
                     touchDownHeightSequence_[legIdx][ii] = liftOffHeightSequence_[legIdx][ii];
                 } else {
@@ -387,6 +405,9 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                 x1 = footTrajectories_[i_st][legIdx][X_IDX];
                 y1 = footTrajectories_[i_st][legIdx][Y_IDX];
                 liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
+                if (ii == idxLower_) {
+                    lastLiftOffHeight[legIdx] = liftOffHeightSequence_[legIdx][ii];
+                }
             }
         }
     }
@@ -434,7 +455,7 @@ void ReferenceGenerator::generateReferenceTrajectory() {
     targetTrajectory_.setInputTrajectory(std::move(inputTrajectory));
 }
 
-constexpr scalar_t ReferenceGenerator::getStanceTime() { return 0.35; }
+constexpr scalar_t ReferenceGenerator::getStanceTime() { return 0.46; }
 
 FootState ReferenceGenerator::getFootState(bool currentContact, bool nextContact) {
     if (currentContact) {
@@ -473,20 +494,24 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
     return phase * (hipPosition + (stanceTime / 2.0) * vWorld) + (1.0 - phase) * footPositionPrev;
 }
 
-void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose,
-                                          const scalar_t radius) {
-    scalar_t best_score = gridMapInterface_.atPositionRoughness(nominalFoothold[0], nominalFoothold[1]);
-    const auto &map = gridMapInterface_.getMap();
+void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius,
+                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx) {
     const grid_map::Position pos = nominalFoothold.head<2>();
-    for (grid_map::CircleIterator iterator(map, pos, radius); !iterator.isPastEnd(); ++iterator) {
-        double score = map.at("elevation_roughness", *iterator);
-        grid_map::Position pos2;
-        map.getPosition(*iterator, pos2);
-        score -= (pos2 - pos).norm();
+    if (firstTouchdown && currentPhase > 0.4 && !firstRun_) {
+        nominalFoothold.head<2>() = nextOptimizedFootholds_[legIdx].head<2>();
+    } else {
+        scalar_t best_score = gridMapInterface_.atPositionRoughness(nominalFoothold[0], nominalFoothold[1]);
+        const auto &map = gridMapInterface_.getMap();
+        for (grid_map::CircleIterator iterator(map, pos, radius); !iterator.isPastEnd(); ++iterator) {
+            double score = map.at("elevation_roughness", *iterator);
+            grid_map::Position pos2;
+            map.getPosition(*iterator, pos2);
+            score -= (pos2 - pos).norm();
 
-        if (score > best_score) {
-            best_score = score;
-            nominalFoothold.head<2>() = pos2;
+            if (score > best_score) {
+                best_score = score;
+                nominalFoothold.head<2>() = pos2;
+            }
         }
     }
 

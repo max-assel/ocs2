@@ -94,6 +94,7 @@ class LeggedRobotInterface final : public RobotInterface {
   std::shared_ptr<GaitSchedule> loadGaitSchedule(const std::string& file, bool verbose) const;
 
   std::unique_ptr<StateInputCost> getBaseTrackingCost(const std::string& taskFile, const CentroidalModelInfo& info, bool verbose);
+  std::unique_ptr<StateCost> getPrejumpTrackingCost(const std::string& taskFile, const CentroidalModelInfo& info, bool verbose);
   matrix_t initializeInputCostWeight(const std::string& taskFile, const CentroidalModelInfo& info);
 
   std::pair<scalar_t, RelaxedBarrierPenalty::Config> loadFrictionConeSettings(const std::string& taskFile, bool verbose) const;

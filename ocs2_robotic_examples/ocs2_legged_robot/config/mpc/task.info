@@ -253,3 +253,39 @@ frictionConeSoftConstraint
   mu                     0.1
   delta                  5.0
 }
+
+; standard state weight matrix
+Q_prejump
+{
+  scaling 1e+0
+
+  ;; Normalized Centroidal Momentum: [linear, angular] ;;
+  (0,0)   0.0     ; vcom_x
+  (1,1)   0.0     ; vcom_y
+  (2,2)   0.0     ; vcom_z
+  (3,3)   0.0      ; L_x / robotMass
+  (4,4)   0.0     ; L_y / robotMass
+  (5,5)   0.0     ; L_z / robotMass
+
+  ;; Base Pose: [position, orientation] ;;
+  (6,6)   0.0    ; p_base_x
+  (7,7)   0.0    ; p_base_y
+  (8,8)   0.0    ; p_base_z
+  (9,9)   0.0    ; theta_base_z
+  (10,10) 0.0    ; theta_base_y
+  (11,11) 0.0    ; theta_base_x
+
+  ;; Leg Joint Positions: [LF, LH, RF, RH] ;;
+  (12,12) 1.0     ; LF_HAA
+  (13,13) 1.0     ; LF_HFE
+  (14,14) 1.0     ; LF_KFE
+  (15,15) 1.0     ; LH_HAA
+  (16,16) 1.0     ; LH_HFE
+  (17,17) 1.0     ; LH_KFE
+  (18,18) 1.0     ; RF_HAA
+  (19,19) 1.0     ; RF_HFE
+  (20,20) 1.0     ; RF_KFE
+  (21,21) 1.0     ; RH_HAA
+  (22,22) 1.0     ; RH_HFE
+  (23,23) 1.0     ; RH_KFE
+}

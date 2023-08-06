@@ -57,7 +57,8 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     vector3_t getProjectedHipPosition(const vector6_t &basePose, size_t legIdx);
     vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
-    void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius);
+    void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius,
+                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx);
 
     void generateFootName2IndexMap();
     void generateHipShiftMap();
@@ -70,6 +71,8 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     std::vector<std::array<bool, 4>> contactFlagsNext_;
     std::vector<vector6_t> baseTrajectory_;
     std::vector<std::array<vector3_t, 4>> footTrajectories_;
+    std::array<vector3_t, 4> nextOptimizedFootholds_;
+    bool firstRun_;
     std::vector<vector_t> jointTrajectories_;
     feet_array_t<scalar_array_t> liftOffHeightSequence_;
     feet_array_t<scalar_array_t> touchDownHeightSequence_;
