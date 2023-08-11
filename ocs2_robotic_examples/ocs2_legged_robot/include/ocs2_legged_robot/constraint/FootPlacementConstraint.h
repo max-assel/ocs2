@@ -42,12 +42,13 @@ namespace legged_robot {
 class FootPlacementConstraint final : public StateConstraint {
    public:
     FootPlacementConstraint(const SwitchedModelReferenceManager &referenceManager,
-                            const EndEffectorKinematics<scalar_t> &endEffectorKinematics,
+                            const EndEffectorKinematics<scalar_t> &endEffectorKinematics, size_t contactPointIndex,
                             EndEffectorLinearConstraint::Config config = EndEffectorLinearConstraint::Config());
 
     ~FootPlacementConstraint() override = default;
     FootPlacementConstraint *clone() const override { return new FootPlacementConstraint(*this); }
-    size_t getNumConstraints(scalar_t time) const override { return 4; }
+    size_t getNumConstraints(scalar_t time) const override { return 2; }
+    bool isActive(scalar_t time) const override;
 
     vector_t getValue(scalar_t time, const vector_t &state, const PreComputation &preComp) const override;
     VectorFunctionLinearApproximation getLinearApproximation(scalar_t time, const vector_t &state,
@@ -56,11 +57,12 @@ class FootPlacementConstraint final : public StateConstraint {
    private:
     FootPlacementConstraint(const FootPlacementConstraint &rhs);
 
-    void updateConfig(const vector_t &state);
-    EndEffectorLinearConstraint::Config getConfig(const vector_t &state);
+    void updateConfig(scalar_t time) const;
+    EndEffectorLinearConstraint::Config getConfig(scalar_t x_lower, scalar_t x_upper) const;
 
     const SwitchedModelReferenceManager *referenceManagerPtr_;
     std::unique_ptr<EndEffectorLinearConstraint> eeLinearConstraintPtr_;
+    size_t contactPointIndex_;
 };
 
 }  // namespace legged_robot

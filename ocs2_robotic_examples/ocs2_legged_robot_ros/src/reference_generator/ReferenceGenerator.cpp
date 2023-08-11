@@ -515,7 +515,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
         }
     }
 
-    nominalBasePose.head<2>() += (nominalFoothold.head<2>() - pos) / 4.0;
+    // nominalBasePose.head<2>() += (nominalFoothold.head<2>() - pos) / 4.0;
 }
 
 void ReferenceGenerator::generateFootName2IndexMap() {

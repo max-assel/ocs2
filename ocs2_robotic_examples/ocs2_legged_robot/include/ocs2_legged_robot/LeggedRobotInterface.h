@@ -104,6 +104,7 @@ class LeggedRobotInterface final : public RobotInterface {
   std::unique_ptr<StateInputConstraint> getZeroForceConstraint(size_t contactPointIndex);
   std::unique_ptr<StateInputConstraint> getZeroVelocityConstraint(const EndEffectorKinematics<scalar_t>& eeKinematics,
                                                                   size_t contactPointIndex, bool useAnalyticalGradients);
+  std::unique_ptr<StateCost> getFootPlacementConstraint(const EndEffectorKinematics<scalar_t>& eeKinematics, size_t contactPointIndex);
   std::unique_ptr<StateInputConstraint> getNormalVelocityConstraint(const EndEffectorKinematics<scalar_t>& eeKinematics,
                                                                     size_t contactPointIndex, bool useAnalyticalGradients);
 

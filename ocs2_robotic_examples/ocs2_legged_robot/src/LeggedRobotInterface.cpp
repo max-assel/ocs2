@@ -38,6 +38,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_legged_robot/LeggedRobotInterface.h"
 
+#include <ocs2_core/soft_constraint/StateSoftConstraint.h>
+
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
 #include <ocs2_centroidal_model/CentroidalModelPinocchioMapping.h>
 #include <ocs2_centroidal_model/ModelHelperFunctions.h>
@@ -51,6 +53,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/constraint/NormalVelocityConstraintCppAd.h"
 #include "ocs2_legged_robot/constraint/ZeroForceConstraint.h"
 #include "ocs2_legged_robot/constraint/ZeroVelocityConstraintCppAd.h"
+#include "ocs2_legged_robot/constraint/FootPlacementConstraint.h"
 #include "ocs2_legged_robot/cost/LeggedRobotQuadraticTrackingCost.h"
 #include "ocs2_legged_robot/dynamics/LeggedRobotDynamicsAD.h"
 
@@ -201,6 +204,9 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
         problemPtr_->equalityConstraintPtr->add(
             footName + "_normalVelocity",
             getNormalVelocityConstraint(*eeKinematicsPtr, i, useAnalyticalGradientsConstraints));
+
+        problemPtr_->preJumpSoftConstraintPtr->add(footName + "_placement",
+                                                   getFootPlacementConstraint(*eeKinematicsPtr, i));
     }
 
     // Pre-computation
@@ -394,6 +400,16 @@ std::unique_ptr<StateInputConstraint> LeggedRobotInterface::getZeroVelocityConst
         return std::make_unique<ZeroVelocityConstraintCppAd>(*referenceManagerPtr_, eeKinematics, contactPointIndex,
                                                              eeZeroVelConConfig(modelSettings_.positionErrorGain));
     }
+}
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+
+std::unique_ptr<StateCost> LeggedRobotInterface::getFootPlacementConstraint(
+    const EndEffectorKinematics<scalar_t> &eeKinematics, size_t contactPointIndex) {
+    auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{1.0, 1e-2});
+    auto constraint = std::make_unique<FootPlacementConstraint>(*referenceManagerPtr_, eeKinematics, contactPointIndex);
+    return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
 }
 
 /******************************************************************************************************/
