@@ -62,6 +62,7 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
       counter(0),
       teps_(1e-6),
       genTimes_(BUFFER_SIZE),
+      useGridmap_(useGridMap),
       firstRun_(true) {
     // Setup joystick subscriber
     auto joy_callback = [this](const sensor_msgs::Joy::ConstPtr &msg) {
@@ -113,6 +114,7 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
     // computeFootTrajectoriesXY(currentState, referenceManager);
+    computeBaseOrientation();
     auto end_t4 = std::chrono::high_resolution_clock::now();
     auto duration_t4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t4 - start_t4).count() / 1e3;
 
@@ -264,6 +266,18 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
         setInitialFootPosition(footName);
     }
 
+    // Set last footholds
+    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
+        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
+        switch (state) {
+            case FootState::CONTACT:
+            case FootState::NEW_SWING:
+            case FootState::NEW_CONTACT:
+                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
+                break;
+        }
+    }
+
     // 6. Get mode schedule
     const auto &modeSchedule = referenceManager.getModeSchedule();
 
@@ -330,6 +344,52 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
     }
 }
 
+void ReferenceGenerator::computeBaseOrientation() {
+    for (int i = 0; i < samplingTimes_.size(); ++i) {
+        matrix_t A(4, 3);
+        vector_t b(4);
+
+        for (int i = 0; i < 4; ++i) {
+            A.block<1, 2>(i, 0) = lastFootholds_[i].head<2>();
+            A(i, 2) = 1.0;
+            b(i) = -lastFootholds_[i][2];
+        }
+
+        vector_t x = A.colPivHouseholderQr().solve(b);
+        const scalar_t an = x[0];
+        const scalar_t bn = x[1];
+        const scalar_t cn = 1.0;
+        const scalar_t dn = x[2];
+
+        vector_t n = (vector_t(3) << an, bn, cn).finished();
+        n = n / n.norm();
+
+        scalar_t yaw = baseTrajectory_[i][YAW_IDX];
+        scalar_t yaw_s = std::sin(yaw);
+        scalar_t yaw_c = std::cos(yaw);
+
+        vector_t x_axis = (vector_t(3) << yaw_c, yaw_s, 0.0).finished();
+        vector_t y_axis = (vector_t(3) << -yaw_s, yaw_c, 0.0).finished();
+
+        vector_t x_proj = x_axis - x_axis.dot(n) * n;
+        vector_t y_proj = y_axis - y_axis.dot(n) * n;
+
+        x_proj = x_proj / x_proj.norm();
+        y_proj = y_proj / y_proj.norm();
+
+        matrix3_t R;
+        R.col(0) = x_proj;
+        R.col(1) = y_proj;
+        R.col(2) = n;
+
+        vector_t rpy = pinocchio::rpy::matrixToRpy(R);
+
+        // baseTrajectory_[i][YAW_IDX] = rpy[2];
+        baseTrajectory_[i][PITCH_IDX] = rpy[1];
+        baseTrajectory_[i][ROLL_IDX] = rpy[0];
+    }
+}
+
 void ReferenceGenerator::computeBaseTrajectoryZ() {
     scalar_t total, n_contacts;
     for (size_t i = 0; i < baseTrajectory_.size(); ++i) {
@@ -347,7 +407,8 @@ void ReferenceGenerator::computeBaseTrajectoryZ() {
 
         // Set base height
         if (n_contacts > 0.0) {
-            baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
+            // baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
+            baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
         } else if (i > 0) {
             baseTrajectory_[i][Z_IDX] = baseTrajectory_[i - 1][Z_IDX];  // all legs in the air, use previous height
         }
@@ -377,7 +438,7 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
 
     // 3. compute lift-off and touchdown sequences
     scalar_t x1, y1, x2, y2;
-    for (size_t ii = idxLower_; ii <= idxUpper_; ++ii) {
+    for (size_t ii = idxLower_; ii <= idxUpper_ && useGridmap_; ++ii) {
         int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + offset;
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
             bool cont = eesContactFlagStocks[legIdx][ii];
@@ -409,6 +470,13 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                     lastLiftOffHeight[legIdx] = liftOffHeightSequence_[legIdx][ii];
                 }
             }
+        }
+    }
+
+    if (!useGridmap_) {
+        for (int i = 0; i < 4; ++i) {
+            std::fill(liftOffHeightSequence_[i].begin(), liftOffHeightSequence_[i].end(), lastFootholds_[i][Z_IDX]);
+            std::fill(touchDownHeightSequence_[i].begin(), touchDownHeightSequence_[i].end(), lastFootholds_[i][Z_IDX]);
         }
     }
 

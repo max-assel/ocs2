@@ -43,6 +43,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     void computeSamplingTimes(scalar_t initTime, scalar_t finalTime, const ReferenceManagerInterface &referenceManager);
     void computeContactFlags(const ReferenceManagerInterface &referenceManager);
     void computeTrajectoryXY(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
+    void computeBaseOrientation();
     void setContactHeights(scalar_t currentTime);
     void computeFootTrajectoriesZ();
     void computeBaseTrajectoryZ();
@@ -76,6 +77,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     std::vector<vector_t> jointTrajectories_;
     feet_array_t<scalar_array_t> liftOffHeightSequence_;
     feet_array_t<scalar_array_t> touchDownHeightSequence_;
+    feet_array_t<vector3_t> lastFootholds_;
     TargetTrajectories targetTrajectory_;
     GaitSchedule &gaitSchedule_;
     GridMapInterface gridMapInterface_;
@@ -104,6 +106,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
 
     // Optimize footholds?
     bool optimizeFootholds_;
+    bool useGridmap_;
 
     // Default base height above the ground
     scalar_t comHeight_;
