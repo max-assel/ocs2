@@ -407,8 +407,8 @@ void ReferenceGenerator::computeBaseTrajectoryZ() {
 
         // Set base height
         if (n_contacts > 0.0) {
-            // baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
-            baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
+            baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
+            // baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
         } else if (i > 0) {
             baseTrajectory_[i][Z_IDX] = baseTrajectory_[i - 1][Z_IDX];  // all legs in the air, use previous height
         }

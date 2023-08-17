@@ -128,7 +128,7 @@ void LeggedRobotVisualizer::update(const SystemObservation &observation, const P
         publishOptimizedStateTrajectory(timeStamp, primalSolution.timeTrajectory_, primalSolution.stateTrajectory_,
                                         primalSolution.modeSchedule_);
         if (tf_plan_) {
-            publishOptimizedStateTrajectoryTF(timeStamp, command.mpcTargetTrajectories_);
+            publishOptimizedStateTrajectoryTF(timeStamp, command.mpcTargetTrajectories_, primalSolution.modeSchedule_);
         }
         lastTime_ = observation.time;
     }
@@ -405,12 +405,16 @@ void LeggedRobotVisualizer::publishOptimizedStateTrajectory(ros::Time timeStamp,
 /******************************************************************************************************/
 /******************************************************************************************************/
 void LeggedRobotVisualizer::publishOptimizedStateTrajectoryTF(ros::Time timeStamp,
-                                                              const TargetTrajectories &targetTrajectories) {
+                                                              const TargetTrajectories &targetTrajectories,
+                                                              const ModeSchedule &modeSchedule) {
     static std::vector<std::string> baseFrameNames;
     static std::vector<std::vector<std::string>> footFrameNames;
     if (footFrameNames.empty()) {
         footFrameNames.resize(centroidalModelInfo_.numThreeDofContacts);
     }
+
+    const auto &eventTimes = modeSchedule.eventTimes;
+    const auto &subsystemSequence = modeSchedule.modeSequence;
 
     // Make sure there are enough frames
     while (baseFrameNames.size() < targetTrajectories.stateTrajectory.size()) {
@@ -449,12 +453,21 @@ void LeggedRobotVisualizer::publishOptimizedStateTrajectoryTF(ros::Time timeStam
             continue;
         }
 
+        const auto preEventContactFlags = modeNumber2StanceLeg(subsystemSequence[i]);
+        const auto postEventContactFlags = modeNumber2StanceLeg(subsystemSequence[i + 1]);
+
         // compute forward kinematics
         pinocchio::forwardKinematics(
             model, data,
             centroidal_model::getGeneralizedCoordinates(targetTrajectories.stateTrajectory[i], centroidalModelInfo_));
         pinocchio::updateFramePlacements(model, data);
         for (size_t j = 0; j < centroidalModelInfo_.numThreeDofContacts; ++j) {
+            const bool newContact = !preEventContactFlags[j] && postEventContactFlags[j];
+
+            if (!newContact) {
+                continue;
+            }
+
             std::string &footName = modelSettings_.contactNames3DoF[j];
             const size_t frameId = model.getFrameId(footName);
             const auto position = data.oMf[frameId].translation();
