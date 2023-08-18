@@ -40,7 +40,7 @@ constexpr char NEWLINE = '\n';
 // TODO: load these constants from the config files
 constexpr float VX_MAX_VELOCITY = 0.3;
 constexpr float VY_MAX_VELOCITY = 0.2;
-constexpr float YAW_RATE_MAX_VELOCITY = 0.5;
+constexpr float YAW_RATE_MAX_VELOCITY = 1.0 ;
 
 constexpr scalar_t BUFFER_SIZE = 100;
 
@@ -124,6 +124,7 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     auto end_t3 = std::chrono::high_resolution_clock::now();
     auto duration_t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t3 - start_t3).count() / 1e3;
 
+    computeBaseOrientation();
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
     // computeFootTrajectoriesXY(currentState, referenceManager);
@@ -281,6 +282,18 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
     // 6. Get mode schedule
     const auto &modeSchedule = referenceManager.getModeSchedule();
 
+    // Set last footholds
+    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
+        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
+        switch (state) {
+            case FootState::CONTACT:
+            case FootState::NEW_SWING:
+            case FootState::NEW_CONTACT:
+                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
+                break;
+        }
+    }
+
     std::array<bool, 4> firstTouchdown = {true, true, true, true};
 
     // 4. Compute the rest of trajectory
@@ -322,6 +335,7 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                     const scalar_t phase = 1.0;
                     footTrajectories_[i][legIdx] = raibertHeuristic(
                         baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                    footTrajectories_[i][legIdx][Z_IDX] = footTrajectories_[i - 1][legIdx][Z_IDX];
                     if (optimizeFootholds_) {
                         optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
                                          currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx);
@@ -344,9 +358,55 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
     }
 }
 
+void ReferenceGenerator::computeBaseOrientation() {
+    for (int i = 0; i < samplingTimes_.size(); ++i) {
+        matrix_t A(4, 3);
+        vector_t b(4);
+
+        for (int i = 0; i < 4; ++i) {
+            A.block<1, 2>(i, 0) = lastFootholds_[i].head<2>();
+            A(i, 2) = 1.0;
+            b(i) = -lastFootholds_[i][2];
+        }
+
+        vector_t x = A.colPivHouseholderQr().solve(b);
+        const scalar_t an = x[0];
+        const scalar_t bn = x[1];
+        const scalar_t cn = 1.0;
+        const scalar_t dn = x[2];
+
+        vector_t n = (vector_t(3) << an, bn, cn).finished();
+        n = n / n.norm();
+
+        scalar_t yaw = baseTrajectory_[i][YAW_IDX];
+        scalar_t yaw_s = std::sin(yaw);
+        scalar_t yaw_c = std::cos(yaw);
+
+        vector_t x_axis = (vector_t(3) << yaw_c, yaw_s, 0.0).finished();
+        vector_t y_axis = (vector_t(3) << -yaw_s, yaw_c, 0.0).finished();
+
+        vector_t x_proj = x_axis - x_axis.dot(n) * n;
+        vector_t y_proj = y_axis - y_axis.dot(n) * n;
+
+        x_proj = x_proj / x_proj.norm();
+        y_proj = y_proj / y_proj.norm();
+
+        matrix3_t R;
+        R.col(0) = x_proj;
+        R.col(1) = y_proj;
+        R.col(2) = n;
+
+        vector_t rpy = pinocchio::rpy::matrixToRpy(R);
+
+        // baseTrajectory_[i][YAW_IDX] = rpy[2];
+        baseTrajectory_[i][PITCH_IDX] = rpy[1];
+        baseTrajectory_[i][ROLL_IDX] = rpy[0];
+    }
+}
+
 void ReferenceGenerator::computeBaseTrajectoryZ() {
     scalar_t total, n_contacts;
-    for (size_t i = 0; i < baseTrajectory_.size(); ++i) {
+    for (size_t i = 1; i < baseTrajectory_.size(); ++i) {
         // Compute average foot height
         n_contacts = 0.0;
         total = 0.0;
@@ -361,7 +421,8 @@ void ReferenceGenerator::computeBaseTrajectoryZ() {
 
         // Set base height
         if (n_contacts > 0.0) {
-            baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
+            // baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
+            baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
         } else if (i > 0) {
             baseTrajectory_[i][Z_IDX] = baseTrajectory_[i - 1][Z_IDX];  // all legs in the air, use previous height
         }
@@ -419,8 +480,8 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                 x1 = footTrajectories_[i_st][legIdx][X_IDX];
                 y1 = footTrajectories_[i_st][legIdx][Y_IDX];
                 liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
-                if (ii == idxLower_) {
-                    lastLiftOffHeight[legIdx] = liftOffHeightSequence_[legIdx][ii];
+                if (ii <= idxLower_) {
+                    lastLiftOffHeight[legIdx] = lastFootholds_[legIdx][Z_IDX];
                 }
             }
         }
@@ -512,10 +573,10 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
                                           const scalar_t currentPhase, bool firstTouchdown, size_t legIdx) {
     // Too late to optimize - use the last optimized foothold
     vector3_t diff = vector3_t::Zero();
-    if (firstTouchdown && currentPhase > 0.4 && !firstRun_) {
-        diff = nextOptimizedFootholds_[legIdx] - nominalFoothold;
+    if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
+        // diff = nextOptimizedFootholds_[legIdx] - nominalFoothold;
         nominalFoothold.head<2>() = nextOptimizedFootholds_[legIdx].head<2>();
-        nominalBasePose.head<2>() += diff.head<2>() / 4.0;
+        // nominalBasePose.head<2>() += diff.head<2>() / 4.0;
         return;
     }
 
@@ -528,9 +589,9 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     // Project nominal foothold onto the closest region
     const auto projection =
         getBestPlanarRegionAtPositionInWorld(nominalFoothold, gridMapInterface_.getPlanarRegions(), penaltyFunction);
-    diff = projection.positionInWorld - nominalFoothold;
+    // diff = projection.positionInWorld - nominalFoothold;
     nominalFoothold = projection.positionInWorld;
-    nominalBasePose.head<2>() += diff.head<2>() / 4.0;
+    // nominalBasePose.head<2>() += diff.head<2>() / 4.0;
 
     if (firstTouchdown) {
         // Generate a convex set around the projected foothold

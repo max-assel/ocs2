@@ -1,7 +1,7 @@
 targetDisplacementVelocity          0.5;
 targetRotationVelocity              0.3;
 
-comHeight                           0.575
+comHeight                           0.5
 
 defaultJointState
 {
@@ -53,5 +53,5 @@ l2              0.19716
 l3              0.285
 l4              0.34923
 
-useGridMap true
-optimizeFootholds true
+useGridMap false
+optimizeFootholds false

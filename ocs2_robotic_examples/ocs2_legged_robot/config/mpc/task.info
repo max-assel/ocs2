@@ -1,4 +1,4 @@
-centroidalModelType             1      // 0: FullCentroidalDynamics, 1: Single Rigid Body Dynamics
+centroidalModelType             1     // 0: FullCentroidalDynamics, 1: Single Rigid Body Dynamics
   
 legged_robot_interface
 {
@@ -19,9 +19,9 @@ model_settings
 
 swing_trajectory_config
 {
-  liftOffVelocity               0.2
-  touchDownVelocity             -0.4
-  swingHeight                   0.14
+  liftOffVelocity               0.01
+  touchDownVelocity             -0.01
+  swingHeight                   0.105
   touchdownAfterHorizon         0.2
   swingTimeScale                0.15
 }
@@ -189,8 +189,8 @@ Q
   (5,5)   10.0     ; L_z / robotMass
 
   ;; Base Pose: [position, orientation] ;;
-  (6,6)   1100.0    ; p_base_x
-  (7,7)   1100.0    ; p_base_y
+  (6,6)   1000.0    ; p_base_x
+  (7,7)   1000.0    ; p_base_y
   (8,8)   1500.0    ; p_base_z
   (9,9)   100.0    ; theta_base_z
   (10,10) 300.0    ; theta_base_y
@@ -243,11 +243,11 @@ R
   (21,21) 15000.0    ; x
   (22,22) 15000.0    ; y
   (23,23) 15000.0    ; z
-}1
+}
 
 frictionConeSoftConstraint
 {
-  frictionCoefficient    0.5
+  frictionCoefficient    0.8
   
   ; relaxed log barrier parameters
   mu                     0.1

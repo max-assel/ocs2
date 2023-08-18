@@ -4,6 +4,7 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
+        - /RobotModel1
         - /TF1/Frames1
         - /GridMap1
         - /Base pose plan1/Frames1
@@ -59,7 +60,7 @@ Visualization Manager:
       Plane Cell Count: 10
       Reference Frame: odom
       Value: true
-    - Alpha: 0.5
+    - Alpha: 1
       Class: rviz/RobotModel
       Collision Enabled: false
       Enabled: true
@@ -785,7 +786,7 @@ Visualization Manager:
       Color Layer: elevation_roughness
       Color Transformer: IntensityLayer
       ColorMap: default
-      Enabled: true
+      Enabled: false
       Grid Cell Decimation: 1
       Grid Line Thickness: 0.10000000149011612
       Height Layer: elevation
@@ -798,10 +799,10 @@ Visualization Manager:
       Min Intensity: 0
       Name: GridMap
       Show Grid Lines: true
-      Topic: /gridmap
+      Topic: /elevation_mapping/elevation_map_raw
       Unreliable: false
       Use ColorMap: true
-      Value: true
+      Value: false
     - Class: rviz/TF
       Enabled: true
       Filter (blacklist): ""
@@ -878,6 +879,22 @@ Visualization Manager:
           {}
       Update Interval: 0
       Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /convex_plane_decomposition_ros/boundaries
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /convex_plane_decomposition_ros/insets
+      Name: MarkerArray
+      Namespaces:
+        "": true
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 238; 238; 238
@@ -904,7 +921,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 3.8514506816864014
+      Distance: 2.549610137939453
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -912,9 +929,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.9192506074905396
-        Y: -0.3701134920120239
-        Z: -0.32817625999450684
+        X: 3.2124202251434326
+        Y: 0.020710494369268417
+        Z: -0.7471019625663757
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

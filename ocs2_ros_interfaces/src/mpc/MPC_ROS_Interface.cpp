@@ -314,7 +314,7 @@ void MPC_ROS_Interface::launchNodes(ros::NodeHandle &nodeHandle) {
         ros::topic::waitForMessage<ocs2_msgs::mpc_observation>(topicPrefix_ + "_mpc_observation");
     mpcObservationCallback(msg);
 
-    ros::Rate rate(30);
+    ros::Rate rate(32);
 
     while (ros::ok() && ros::master::check()) {
         // measure the delay in running MPC

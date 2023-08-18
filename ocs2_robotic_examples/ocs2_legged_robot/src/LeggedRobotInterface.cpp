@@ -407,6 +407,7 @@ std::unique_ptr<StateInputConstraint> LeggedRobotInterface::getZeroVelocityConst
 
 std::unique_ptr<StateCost> LeggedRobotInterface::getFootPlacementConstraint(
     const EndEffectorKinematics<scalar_t> &eeKinematics, size_t contactPointIndex) {
+    // auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{0.02, 0.02});
     auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{1.0, 1.5});
     auto constraint = std::make_unique<FootPlacementConstraint>(*referenceManagerPtr_, eeKinematics, contactPointIndex);
     return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
