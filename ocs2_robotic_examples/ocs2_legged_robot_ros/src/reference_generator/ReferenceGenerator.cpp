@@ -65,6 +65,7 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
       counter(0),
       teps_(1e-6),
       genTimes_(BUFFER_SIZE),
+      useGridmap_(useGridMap),
       firstRun_(true) {
     // Setup joystick subscriber
     auto joy_callback = [this](const sensor_msgs::Joy::ConstPtr &msg) {
@@ -128,6 +129,7 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
     // computeFootTrajectoriesXY(currentState, referenceManager);
+    computeBaseOrientation();
     auto end_t4 = std::chrono::high_resolution_clock::now();
     auto duration_t4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t4 - start_t4).count() / 1e3;
 
@@ -277,6 +279,18 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
     footTrajectories_.resize(samplingTimes_.size());
     for (const std::string &footName : modelSettings_.contactNames3DoF) {
         setInitialFootPosition(footName);
+    }
+
+    // Set last footholds
+    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
+        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
+        switch (state) {
+            case FootState::CONTACT:
+            case FootState::NEW_SWING:
+            case FootState::NEW_CONTACT:
+                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
+                break;
+        }
     }
 
     // 6. Get mode schedule
@@ -452,7 +466,7 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
 
     // 3. compute lift-off and touchdown sequences
     scalar_t x1, y1, x2, y2;
-    for (size_t ii = idxLower_; ii <= idxUpper_; ++ii) {
+    for (size_t ii = idxLower_; ii <= idxUpper_ && useGridmap_; ++ii) {
         int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + offset;
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
             bool cont = eesContactFlagStocks[legIdx][ii];
@@ -484,6 +498,13 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                     lastLiftOffHeight[legIdx] = lastFootholds_[legIdx][Z_IDX];
                 }
             }
+        }
+    }
+
+    if (!useGridmap_) {
+        for (int i = 0; i < 4; ++i) {
+            std::fill(liftOffHeightSequence_[i].begin(), liftOffHeightSequence_[i].end(), lastFootholds_[i][Z_IDX]);
+            std::fill(touchDownHeightSequence_[i].begin(), touchDownHeightSequence_[i].end(), lastFootholds_[i][Z_IDX]);
         }
     }
 

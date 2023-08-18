@@ -314,7 +314,9 @@ void MPC_ROS_Interface::launchNodes(ros::NodeHandle &nodeHandle) {
         ros::topic::waitForMessage<ocs2_msgs::mpc_observation>(topicPrefix_ + "_mpc_observation");
     mpcObservationCallback(msg);
 
-    ros::Rate rate(32);
+    const scalar_t mpcFrequency = mpc_.settings().mpcDesiredFrequency_;
+    ROS_INFO_STREAM("MPC node is running with frequency " << mpcFrequency << " Hz.");
+    ros::Rate rate(mpcFrequency);
 
     while (ros::ok() && ros::master::check()) {
         // measure the delay in running MPC
