@@ -76,14 +76,16 @@ int main(int argc, char **argv) {
 
     // Reference generator
     bool useGridMap;
+    std::string mapTopic = "/convex_plane_decomposition_ros/planar_terrain";
     loadData::loadCppDataType(referenceFile, "useGridMap", useGridMap);
     auto referenceGeneratorPtr = std::make_shared<ReferenceGenerator>(
-        nodeHandle, referenceFile, interface.getCentroidalModelInfo(), mpc.getSolverPtr()->getReferenceManager(),
+        nodeHandle, referenceFile, interface.getCentroidalModelInfo(), *interface.getSwitchedModelReferenceManagerPtr(),
         interface.getPinocchioInterface(), interface.modelSettings(),
-        interface.getSwitchedModelReferenceManagerPtr()->getSwingTrajectoryPlanner(), "gridmap",
+        interface.getSwitchedModelReferenceManagerPtr()->getSwingTrajectoryPlanner(), mapTopic,
         *(interface.getSwitchedModelReferenceManagerPtr()->getGaitSchedule()), useGridMap);
     mpc.getSolverPtr()->addSynchronizedModule(referenceGeneratorPtr);
 
+    std::cout << "Reference generator initialized." << std::endl;
     // observer for zero velocity constraints (only add this for debugging as it slows down the solver)
     if (multiplot) {
         auto createStateInputBoundsObserver = [&](const std::string &termName) {

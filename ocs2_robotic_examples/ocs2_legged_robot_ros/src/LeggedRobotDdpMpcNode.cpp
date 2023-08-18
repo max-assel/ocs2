@@ -83,7 +83,7 @@ int main(int argc, char **argv) {
     bool useGridMap;
     loadData::loadCppDataType(referenceFile, "useGridMap", useGridMap);
     auto referenceGeneratorPtr = std::make_shared<ReferenceGenerator>(
-        nodeHandle, referenceFile, interface.getCentroidalModelInfo(), mpc.getSolverPtr()->getReferenceManager(),
+        nodeHandle, referenceFile, interface.getCentroidalModelInfo(), *interface.getSwitchedModelReferenceManagerPtr(),
         interface.getPinocchioInterface(), interface.modelSettings(),
         interface.getSwitchedModelReferenceManagerPtr()->getSwingTrajectoryPlanner(), "gridmap",
         *(interface.getSwitchedModelReferenceManagerPtr()->getGaitSchedule()), useGridMap);

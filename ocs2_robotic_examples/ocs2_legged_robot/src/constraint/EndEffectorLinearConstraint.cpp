@@ -66,6 +66,7 @@ void EndEffectorLinearConstraint::configure(Config&& config) {
   assert((config.Av.size() > 0 && config.Av.rows() == numConstraints_) || config.Av.size() == 0);
   assert((config.Av.size() > 0 && config.Av.cols() == 3) || config.Av.size() == 0);
   config_ = std::move(config);
+  numConstraints_ = config_.b.rows();
 }
 
 /******************************************************************************************************/

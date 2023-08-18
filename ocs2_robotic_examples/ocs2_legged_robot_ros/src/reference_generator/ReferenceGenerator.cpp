@@ -15,6 +15,9 @@
 // Ros
 #include <sensor_msgs/Joy.h>
 
+// gridmap
+#include <convex_plane_decomposition/ConvexRegionGrowing.h>
+
 // Mode schedule
 #include <ocs2_legged_robot/gait/MotionPhaseDefinition.h>
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
@@ -43,7 +46,7 @@ constexpr scalar_t BUFFER_SIZE = 100;
 
 ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string &referenceFile,
                                        const CentroidalModelInfo &modelInfo,
-                                       ReferenceManagerInterface &referenceManager,
+                                       SwitchedModelReferenceManager &referenceManager,
                                        const PinocchioInterface &pinocchioInterface, const ModelSettings &modelSettings,
                                        std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPlannerPtr,
                                        std::string gridMapTopic, GaitSchedule &gaitSchedule, bool useGridMap)
@@ -85,6 +88,17 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
 
     // Generate hip shift map
     generateHipShiftMap();
+
+    // Initialize book-kepping variables
+    firstContactInitialized_ = {false, false, false, false};
+
+    // Initialize reference manager pointers
+    std::cout << "Initializing reference manager pointers" << std::endl;
+    referenceManager_.firstContactInitializedPtr = &firstContactInitialized_;
+    referenceManager_.firstContactTimesPtr = &firstContactTimes_;
+    referenceManager_.convexRegionWorldTransformsPtr = &convexRegionWorldTransforms_;
+    referenceManager_.convexRegionsPtr = &convexRegions_;
+    referenceManager_.initialized_ = true;
 }
 
 void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t &currentState,
@@ -309,7 +323,7 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                     footTrajectories_[i][legIdx] = raibertHeuristic(
                         baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
                     if (optimizeFootholds_) {
-                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], 0.25,
+                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
                                          currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx);
 
                         if (firstTouchdown[legIdx]) {
@@ -494,28 +508,47 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
     return phase * (hipPosition + (stanceTime / 2.0) * vWorld) + (1.0 - phase) * footPositionPrev;
 }
 
-void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius,
+void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
                                           const scalar_t currentPhase, bool firstTouchdown, size_t legIdx) {
-    const grid_map::Position pos = nominalFoothold.head<2>();
+    // Too late to optimize - use the last optimized foothold
+    vector3_t diff = vector3_t::Zero();
     if (firstTouchdown && currentPhase > 0.4 && !firstRun_) {
+        diff = nextOptimizedFootholds_[legIdx] - nominalFoothold;
         nominalFoothold.head<2>() = nextOptimizedFootholds_[legIdx].head<2>();
-    } else {
-        scalar_t best_score = gridMapInterface_.atPositionRoughness(nominalFoothold[0], nominalFoothold[1]);
-        const auto &map = gridMapInterface_.getMap();
-        for (grid_map::CircleIterator iterator(map, pos, radius); !iterator.isPastEnd(); ++iterator) {
-            double score = map.at("elevation_roughness", *iterator);
-            grid_map::Position pos2;
-            map.getPosition(*iterator, pos2);
-            score -= (pos2 - pos).norm();
-
-            if (score > best_score) {
-                best_score = score;
-                nominalFoothold.head<2>() = pos2;
-            }
-        }
+        nominalBasePose.head<2>() += diff.head<2>() / 4.0;
+        return;
     }
 
-    // nominalBasePose.head<2>() += (nominalFoothold.head<2>() - pos) / 4.0;
+    // Get gridmap
+    const auto &map = gridMapInterface_.getMap();
+
+    // Setup penalty function
+    auto penaltyFunction = [](const Eigen::Vector3d &projectedPoint) { return 0.0; };
+
+    // Project nominal foothold onto the closest region
+    const auto projection =
+        getBestPlanarRegionAtPositionInWorld(nominalFoothold, gridMapInterface_.getPlanarRegions(), penaltyFunction);
+    diff = projection.positionInWorld - nominalFoothold;
+    nominalFoothold = projection.positionInWorld;
+    nominalBasePose.head<2>() += diff.head<2>() / 4.0;
+
+    if (firstTouchdown) {
+        // Generate a convex set around the projected foothold
+        const int numberOfVertices = 16;
+        const double growthFactor = 1.05;
+        const auto convexRegion = convex_plane_decomposition::growConvexPolygonInsideShape(
+            projection.regionPtr->boundaryWithInset.boundary, projection.positionInTerrainFrame, numberOfVertices,
+            growthFactor);
+
+        // Store optimized foothold
+        nextOptimizedFootholds_[legIdx] = nominalFoothold;
+
+        // Store convex region
+        firstContactInitialized_[legIdx] = true;
+        firstContactTimes_[legIdx] = time;
+        convexRegions_[legIdx] = convexRegion;
+        convexRegionWorldTransforms_[legIdx] = projection.regionPtr->transformPlaneToWorld;
+    }
 }
 
 void ReferenceGenerator::generateFootName2IndexMap() {

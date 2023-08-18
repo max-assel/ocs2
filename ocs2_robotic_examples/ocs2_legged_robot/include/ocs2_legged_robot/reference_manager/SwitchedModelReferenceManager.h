@@ -32,9 +32,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <ocs2_core/thread_support/Synchronized.h>
 #include <ocs2_oc/synchronized_module/ReferenceManager.h>
 
+#include "ocs2_legged_robot/common/Types.h"
 #include "ocs2_legged_robot/foot_planner/SwingTrajectoryPlanner.h"
 #include "ocs2_legged_robot/gait/GaitSchedule.h"
 #include "ocs2_legged_robot/gait/MotionPhaseDefinition.h"
+
+#include <convex_plane_decomposition/PolygonTypes.h>
 
 namespace ocs2 {
 namespace legged_robot {
@@ -56,12 +59,20 @@ class SwitchedModelReferenceManager : public ReferenceManager {
 
   const std::shared_ptr<SwingTrajectoryPlanner>& getSwingTrajectoryPlanner() { return swingTrajectoryPtr_; }
 
+  bool initialized_ = false;
+  feet_array_t<convex_plane_decomposition::CgalPolygon2d> *convexRegionsPtr;
+  feet_array_t<Eigen::Isometry3d> *convexRegionWorldTransformsPtr;
+  feet_array_t<scalar_t> *firstContactTimesPtr;
+  feet_array_t<bool> *firstContactInitializedPtr;
+
  private:
   void modifyReferences(scalar_t initTime, scalar_t finalTime, const vector_t& initState, TargetTrajectories& targetTrajectories,
                         ModeSchedule& modeSchedule) override;
 
   std::shared_ptr<GaitSchedule> gaitSchedulePtr_;
   std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPtr_;
+
+
 };
 
 }  // namespace legged_robot

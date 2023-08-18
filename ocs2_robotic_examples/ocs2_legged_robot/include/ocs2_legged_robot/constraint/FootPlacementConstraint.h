@@ -36,8 +36,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/constraint/EndEffectorLinearConstraint.h"
 #include "ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h"
 
+#define OCS2_PI 3.14159265358979323846
+
 namespace ocs2 {
 namespace legged_robot {
+
+using matrix2_t = Eigen::Matrix<scalar_t, 2, 2>;
+using vector2_t = Eigen::Matrix<scalar_t, 2, 1>;
 
 class FootPlacementConstraint final : public StateConstraint {
    public:
@@ -47,7 +52,8 @@ class FootPlacementConstraint final : public StateConstraint {
 
     ~FootPlacementConstraint() override = default;
     FootPlacementConstraint *clone() const override { return new FootPlacementConstraint(*this); }
-    size_t getNumConstraints(scalar_t time) const override { return 2; }
+    size_t getNumConstraints(scalar_t time) const override { return referenceManagerPtr_->convexRegionsPtr->at(contactPointIndex_).size(); }
+    // size_t getNumConstraints(scalar_t time) const override { return 1; }
     bool isActive(scalar_t time) const override;
 
     vector_t getValue(scalar_t time, const vector_t &state, const PreComputation &preComp) const override;
@@ -55,10 +61,8 @@ class FootPlacementConstraint final : public StateConstraint {
                                                              const PreComputation &preComp) const override;
 
    private:
+    void setupFootholdPlacementConstraint() const;
     FootPlacementConstraint(const FootPlacementConstraint &rhs);
-
-    void updateConfig(scalar_t time) const;
-    EndEffectorLinearConstraint::Config getConfig(scalar_t x_lower, scalar_t x_upper) const;
 
     const SwitchedModelReferenceManager *referenceManagerPtr_;
     std::unique_ptr<EndEffectorLinearConstraint> eeLinearConstraintPtr_;

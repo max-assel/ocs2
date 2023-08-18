@@ -28,6 +28,9 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   grid_map_core
   grid_map_ros
   grid_map_pcl
+  convex_plane_decomposition
+  convex_plane_decomposition_ros
+  convex_plane_decomposition_msgs
 )
 
 find_package(catkin REQUIRED COMPONENTS

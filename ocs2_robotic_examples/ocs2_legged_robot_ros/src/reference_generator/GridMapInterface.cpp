@@ -5,13 +5,13 @@
 namespace ocs2 {
 namespace legged_robot {
 
-GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap)
-    : useGridMap_(useGridMap) {
-    if (!useGridMap_) {
+GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap) {
+    useGridmap_ = useGridMap;
+    if(!useGridMap) {
         return;
     }
-
-    // Define supported layer names
+    
+    // Gridmap layer name
     layers_ = {"elevation", "elevation_smooth", "elevation_roughness"};
 
     // Map subscriber
@@ -19,32 +19,40 @@ GridMapInterface::GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, 
 
     // Wait for initial map message
     ROS_INFO("Waiting for initial grid map message");
-    auto msgPtr = ::ros::topic::waitForMessage<grid_map_msgs::GridMap>(mapTopic);
+    auto msgPtr = ros::topic::waitForMessage<convex_plane_decomposition_msgs::PlanarTerrain>(mapTopic);
     if (!msgPtr) {
         std::cerr << "Failed to receive initial grid map message" << std::endl;
-        ::ros::shutdown();
+        ros::shutdown();
         return;
     }
     mapCallback(msgPtr);
 }
-void GridMapInterface::mapCallback(const grid_map_msgs::GridMap::ConstPtr &msgPtr) {
-    grid_map::GridMapRosConverter converter;
-    converter.fromMessage(*msgPtr, map_, layers_, false, true);
+
+void GridMapInterface::mapCallback(const convex_plane_decomposition_msgs::PlanarTerrain::ConstPtr &msg) {
+
+    if(!planarTerrainPtr) {
+        std::unique_ptr<convex_plane_decomposition::PlanarTerrain> newTerrain(
+            new convex_plane_decomposition::PlanarTerrain(convex_plane_decomposition::fromMessage(*msg)));
+        planarTerrainPtr.swap(newTerrain);
+    }
 }
 
 scalar_t GridMapInterface::atPositionElevation(scalar_t x, scalar_t y) {
-    // Return 0 if grid map is not used
-    if (!useGridMap_) {
+    if(!useGridmap_) {
         return 0.0;
     }
 
-    pos_ = {x, y};
-    return map_.atPosition("elevation", pos_);
-}
 
-scalar_t GridMapInterface::atPositionRoughness(scalar_t x, scalar_t y) {
-    pos_ = {x, y};
-    return map_.atPosition("elevation_roughness", pos_);
+
+    const auto &map = getMap();
+    pos_[0] = x;
+    pos_[1] = y;
+
+    if(!map.isInside(pos_)) {
+        return 0.0;
+    }
+
+    return map.atPosition("elevation", pos_);
 }
 
 }  // namespace legged_robot

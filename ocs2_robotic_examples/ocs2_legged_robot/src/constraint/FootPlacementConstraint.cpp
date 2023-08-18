@@ -29,6 +29,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "ocs2_legged_robot/constraint/FootPlacementConstraint.h"
 
+#include <convex_plane_decomposition/PlanarRegion.h>
+
 namespace ocs2 {
 namespace legged_robot {
 
@@ -38,22 +40,15 @@ FootPlacementConstraint::FootPlacementConstraint(const SwitchedModelReferenceMan
     : StateConstraint(ConstraintOrder::Linear),
       referenceManagerPtr_(&referenceManager),
       contactPointIndex_(contactPointIndex),
-      eeLinearConstraintPtr_(new EndEffectorLinearConstraint(endEffectorKinematics, 4, std::move(config))) {}
+      eeLinearConstraintPtr_(new EndEffectorLinearConstraint(endEffectorKinematics, 4, std::move(config))) {
+        EndEffectorLinearConstraint::Config config2;
+        config2.Ax = matrix_t::Zero(1, 3);
+        config2.b = vector_t(1);
 
-bool FootPlacementConstraint::isActive(scalar_t time) const {
-    constexpr scalar_t eps = 1e-7;
-    bool newContact = !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_] &&
-                      referenceManagerPtr_->getContactFlags(time + eps)[contactPointIndex_];
+        config2.b[0] = 133;
 
-    if (newContact) {
-        updateConfig(time);
-    }
-    return newContact;
-}
-
-vector_t FootPlacementConstraint::getValue(scalar_t time, const vector_t &state, const PreComputation &preComp) const {
-    return eeLinearConstraintPtr_->getValue(time, state, vector_t(), preComp);
-}
+        eeLinearConstraintPtr_->configure(config2);
+      }
 
 FootPlacementConstraint::FootPlacementConstraint(const FootPlacementConstraint &rhs)
     : StateConstraint(rhs),
@@ -61,50 +56,73 @@ FootPlacementConstraint::FootPlacementConstraint(const FootPlacementConstraint &
       contactPointIndex_(rhs.contactPointIndex_),
       eeLinearConstraintPtr_(rhs.eeLinearConstraintPtr_->clone()) {}
 
+bool FootPlacementConstraint::isActive(scalar_t time) const {
+    bool initialized = referenceManagerPtr_->firstContactInitializedPtr->at(contactPointIndex_);
+    if (!initialized) {
+        return false;
+    }
+
+    const scalar_t firstContactTime = referenceManagerPtr_->firstContactTimesPtr->at(contactPointIndex_);
+    if (time != firstContactTime) {
+        return false;
+    }
+
+    setupFootholdPlacementConstraint();
+    return true;
+}
+
+vector_t FootPlacementConstraint::getValue(scalar_t time, const vector_t &state, const PreComputation &preComp) const {
+    return eeLinearConstraintPtr_->getValue(time, state, vector_t(), preComp);
+}
+
 VectorFunctionLinearApproximation FootPlacementConstraint::getLinearApproximation(scalar_t time, const vector_t &state,
                                                                                   const PreComputation &preComp) const {
     return eeLinearConstraintPtr_->getLinearApproximation(time, state, vector_t(), preComp);
 }
 
-void FootPlacementConstraint::updateConfig(scalar_t time) const {
-    const auto &desiredState = referenceManagerPtr_->getTargetTrajectories().getDesiredState(time);
-    auto &endEffectorKinematics = eeLinearConstraintPtr_->getEndEffectorKinematics();
-    const vector3_t desiredFoothold = endEffectorKinematics.getPosition(desiredState)[0];
-    const scalar_t x = desiredFoothold[0];
+void FootPlacementConstraint::setupFootholdPlacementConstraint() const {
+    auto &convexRegion = referenceManagerPtr_->convexRegionsPtr->at(contactPointIndex_);
 
-    constexpr scalar_t terrainGap = 0.06;
-    constexpr scalar_t platformWidth = 3.0;
+    // Get number of constraints = number of vertices = number of polygon sides
+    size_t nConstraints = convexRegion.size();
 
-    // Find the closest terrain point to the desired foothold
-    scalar_t idx = std::ceil(x / (terrainGap + platformWidth));
+    // Setup config
+    EndEffectorLinearConstraint::Config config;
+    config.Ax = matrix_t::Zero(nConstraints, 3);
+    config.b = vector_t(nConstraints);
 
-    // Find closer terrain point
-    scalar_t xTerrain = idx * (terrainGap + platformWidth);
-    scalar_t xPlatform = xTerrain - terrainGap;
+    // Get convex region world transform
+    const auto &convexRegionWorldTransform =
+        referenceManagerPtr_->convexRegionWorldTransformsPtr->at(contactPointIndex_);
 
-    scalar_t x_lower, x_upper;
-    if (x - xPlatform < 0.0) {
-        x_lower = xPlatform - platformWidth;
-        x_upper = xPlatform;
-    } else {
-        if (std::abs(x - xPlatform) <= std::abs(x - xTerrain)) {
-            x_lower = xPlatform - platformWidth;
-            x_upper = xPlatform;
-        } else {
-            x_lower = xTerrain;
-            x_upper = xTerrain + platformWidth;
-        }
+    // Setup 90 deg rotation matrix
+    constexpr scalar_t c = std::cos(OCS2_PI / 2);
+    constexpr scalar_t s = std::sin(OCS2_PI / 2);
+    const matrix2_t R = (matrix2_t() << c, -s, s, c).finished();
+
+    // Generate convex region linear constraint
+    for (size_t i = 0; i < nConstraints; ++i) {
+        size_t j = (i + 1) % nConstraints;
+
+        // It doesn't make sense to do the transformation twice for each point -> cache it!
+        const vector2_t point_i = convex_plane_decomposition::positionInWorldFrameFromPosition2dInPlane(
+                                      convexRegion[i], convexRegionWorldTransform)
+                                      .head<2>();
+        const vector2_t point_j = convex_plane_decomposition::positionInWorldFrameFromPosition2dInPlane(
+                                      convexRegion[j], convexRegionWorldTransform)
+                                      .head<2>();
+
+        // Vector from point_i to point_j
+        const vector2_t s = point_j - point_i;
+
+        // Normal vector
+        const vector2_t n = R * s;
+
+        config.Ax.block<1, 2>(i, 0) = n;
+        config.b[i] = -n.dot(point_i);
     }
 
-    eeLinearConstraintPtr_->configure(getConfig(x_lower, x_upper));
-}
-
-EndEffectorLinearConstraint::Config FootPlacementConstraint::getConfig(scalar_t x_lower, scalar_t x_upper) const {
-    EndEffectorLinearConstraint::Config config;
-    config.b = (vector_t(2) << -x_lower, x_upper).finished();
-    config.Ax = matrix_t(2, 3);
-    config.Ax << 1.0, 0.0, 0.0, -1.0, 0.0, 0.0;
-    return config;
+    eeLinearConstraintPtr_->configure(config);
 }
 
 }  // namespace legged_robot

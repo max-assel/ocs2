@@ -23,5 +23,8 @@
   <depend>ocs2_pinocchio_interface</depend>
   <depend>ocs2_centroidal_model</depend>
   <depend>pinocchio</depend>
+  <depend>convex_plane_decomposition</depend>
+  <depend>convex_plane_decomposition_ros</depend>
+  <depend>convex_plane_decomposition_msgs</depend>
 
 </package>

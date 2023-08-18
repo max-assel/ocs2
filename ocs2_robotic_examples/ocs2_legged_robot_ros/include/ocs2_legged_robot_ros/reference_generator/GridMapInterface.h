@@ -1,37 +1,43 @@
 #pragma once
 
 // std-lib
+#include <memory>
 #include <string>
-#include <string>
+#include <vector>
 
 // ros
 #include <ros/ros.h>
 
-// ocs2
-#include <ocs2_legged_robot/common/Types.h>
-
 // gridmap
-#include <grid_map_pcl/GridMapPclConverter.hpp>
 #include <grid_map_ros/grid_map_ros.hpp>
+#include <convex_plane_decomposition_msgs/PlanarTerrain.h>
+#include <convex_plane_decomposition_ros/MessageConversion.h>
+#include <convex_plane_decomposition/SegmentedPlaneProjection.h>
 
 namespace ocs2 {
 namespace legged_robot {
 
+using scalar_t = double;
+
 class GridMapInterface {
    public:
-    GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap = false);
+    GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap);
     scalar_t atPositionElevation(scalar_t x, scalar_t y);
-    scalar_t atPositionRoughness(scalar_t x, scalar_t y);
-    const grid_map::GridMap &getMap() const { return map_; }
+    inline grid_map::GridMap &getMap() { return planarTerrainPtr->gridMap; }
+    inline std::vector<convex_plane_decomposition::PlanarRegion> &getPlanarRegions() {
+        return planarTerrainPtr->planarRegions;
+    }
 
    private:
-    void mapCallback(const grid_map_msgs::GridMap::ConstPtr &msgPtr);
+    void mapCallback(const convex_plane_decomposition_msgs::PlanarTerrain::ConstPtr &msgPtr);
 
-    grid_map::GridMap map_;
     grid_map::Position pos_;
     ::ros::Subscriber mapSubscriber_;
     std::vector<std::string> layers_;
-    const bool useGridMap_;
+
+    std::unique_ptr<convex_plane_decomposition::PlanarTerrain> planarTerrainPtr;
+
+    bool useGridmap_;
 };
 
 }  // namespace legged_robot

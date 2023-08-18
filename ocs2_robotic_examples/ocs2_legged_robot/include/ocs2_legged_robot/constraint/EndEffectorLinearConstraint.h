@@ -85,7 +85,7 @@ class EndEffectorLinearConstraint final : public StateInputConstraint {
   EndEffectorLinearConstraint(const EndEffectorLinearConstraint& rhs);
 
   std::unique_ptr<EndEffectorKinematics<scalar_t>> endEffectorKinematicsPtr_;
-  const size_t numConstraints_;
+  size_t numConstraints_;
   Config config_;
 };
 

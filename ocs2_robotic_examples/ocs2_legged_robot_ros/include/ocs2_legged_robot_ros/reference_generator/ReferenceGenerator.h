@@ -6,10 +6,14 @@
 #include <ros/ros.h>
 #include <boost/circular_buffer.hpp>
 
+// gridmap
+#include <convex_plane_decomposition/PolygonTypes.h>
+
 #include <ocs2_legged_robot_ros/reference_generator/AnymalInverseKinematics.h>
 #include <ocs2_legged_robot_ros/reference_generator/GridMapInterface.h>
 #include "ocs2_legged_robot/gait/GaitSchedule.h"
 #include <ocs2_legged_robot/foot_planner/SwingTrajectoryPlanner.h>
+#include <ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h>
 #include <ocs2_oc/synchronized_module/ReferenceManagerInterface.h>
 #include <ocs2_oc/synchronized_module/SolverSynchronizedModule.h>
 #include <ocs2_pinocchio_interface/PinocchioInterface.h>
@@ -27,7 +31,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
    public:
     // Constructor
     ReferenceGenerator(::ros::NodeHandle &nh, const std::string &referenceFile, const CentroidalModelInfo &modelInfo,
-                       ReferenceManagerInterface &referenceManager, const PinocchioInterface &pinocchioInterface,
+                       SwitchedModelReferenceManager &referenceManager, const PinocchioInterface &pinocchioInterface,
                        const ModelSettings &modelSettings,
                        std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPlannerPtr, std::string gridMapTopic,
                        GaitSchedule &gaitSchedule, bool useGridMap = false);
@@ -57,7 +61,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     vector3_t getProjectedHipPosition(const vector6_t &basePose, size_t legIdx);
     vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
-    void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t radius,
+    void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
                           const scalar_t currentPhase, bool firstTouchdown, size_t legIdx);
 
     void generateFootName2IndexMap();
@@ -91,7 +95,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
    private:
     ::ros::Subscriber joystickSubscriber_;
     PinocchioInterface pinocchioInterface_;
-    ReferenceManagerInterface &referenceManager_;
+    SwitchedModelReferenceManager &referenceManager_;
     const CentroidalModelInfo &modelInfo_;
     std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPlannerPtr_;
     ModelSettings modelSettings_;
@@ -104,6 +108,12 @@ class ReferenceGenerator : public SolverSynchronizedModule {
 
     // Optimize footholds?
     bool optimizeFootholds_;
+
+    // Book-keeping for FootholdPlacementConstraint
+    feet_array_t<bool> firstContactInitialized_;
+    feet_array_t<scalar_t> firstContactTimes_;
+    feet_array_t<Eigen::Isometry3d> convexRegionWorldTransforms_;
+    feet_array_t<convex_plane_decomposition::CgalPolygon2d> convexRegions_;
 
     // Default base height above the ground
     scalar_t comHeight_;
