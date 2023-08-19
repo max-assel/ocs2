@@ -59,7 +59,6 @@ class SwitchedModelReferenceManager : public ReferenceManager {
 
   const std::shared_ptr<SwingTrajectoryPlanner>& getSwingTrajectoryPlanner() { return swingTrajectoryPtr_; }
 
-  bool initialized_ = false;
   feet_array_t<convex_plane_decomposition::CgalPolygon2d> *convexRegionsPtr;
   feet_array_t<Eigen::Isometry3d> *convexRegionWorldTransformsPtr;
   feet_array_t<scalar_t> *firstContactTimesPtr;
@@ -71,8 +70,6 @@ class SwitchedModelReferenceManager : public ReferenceManager {
 
   std::shared_ptr<GaitSchedule> gaitSchedulePtr_;
   std::shared_ptr<SwingTrajectoryPlanner> swingTrajectoryPtr_;
-
-
 };
 
 }  // namespace legged_robot

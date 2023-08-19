@@ -40,7 +40,7 @@ constexpr char NEWLINE = '\n';
 // TODO: load these constants from the config files
 constexpr float VX_MAX_VELOCITY = 0.3;
 constexpr float VY_MAX_VELOCITY = 0.2;
-constexpr float YAW_RATE_MAX_VELOCITY = 1.0 ;
+constexpr float YAW_RATE_MAX_VELOCITY = 1.0;
 
 constexpr scalar_t BUFFER_SIZE = 100;
 
@@ -99,7 +99,6 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
     referenceManager_.firstContactTimesPtr = &firstContactTimes_;
     referenceManager_.convexRegionWorldTransformsPtr = &convexRegionWorldTransforms_;
     referenceManager_.convexRegionsPtr = &convexRegions_;
-    referenceManager_.initialized_ = true;
 }
 
 void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, const vector_t &currentState,
@@ -125,7 +124,6 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     auto end_t3 = std::chrono::high_resolution_clock::now();
     auto duration_t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t3 - start_t3).count() / 1e3;
 
-    computeBaseOrientation();
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
     // computeFootTrajectoriesXY(currentState, referenceManager);
@@ -352,12 +350,7 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                     footTrajectories_[i][legIdx][Z_IDX] = footTrajectories_[i - 1][legIdx][Z_IDX];
                     if (optimizeFootholds_) {
                         optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
-                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx);
-
-                        if (firstTouchdown[legIdx]) {
-                            nextOptimizedFootholds_[legIdx] = footTrajectories_[i][legIdx];
-                        }
-
+                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i, i+1); // Only valid for trot gait
                         firstTouchdown[legIdx] = false;
                     }
                 } break;
@@ -470,7 +463,7 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
         int i_st = static_cast<int>(ii) - static_cast<int>(idxLower_) + offset;
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
             bool cont = eesContactFlagStocks[legIdx][ii];
-            if (!cont) {
+            if (!cont) {  // touchdown
                 int start, stop;
                 std::tie(start, stop) = swingTrajectoryPlannerPtr_->findIndex(ii, eesContactFlagStocks[legIdx]);
                 start = offset + static_cast<int>(start) - static_cast<int>(idxLower_);
@@ -551,7 +544,7 @@ void ReferenceGenerator::generateReferenceTrajectory() {
     targetTrajectory_.setInputTrajectory(std::move(inputTrajectory));
 }
 
-constexpr scalar_t ReferenceGenerator::getStanceTime() { return 0.46; }
+constexpr scalar_t ReferenceGenerator::getStanceTime() { return 0.45; }
 
 FootState ReferenceGenerator::getFootState(bool currentContact, bool nextContact) {
     if (currentContact) {
@@ -591,7 +584,7 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
 }
 
 void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
-                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx) {
+                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx, int liftOffIdx) {
     // Too late to optimize - use the last optimized foothold
     vector3_t diff = vector3_t::Zero();
     if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
@@ -605,7 +598,17 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     const auto &map = gridMapInterface_.getMap();
 
     // Setup penalty function
-    auto penaltyFunction = [](const Eigen::Vector3d &projectedPoint) { return 0.0; };
+    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) {
+        scalar_t cost = 0.0;
+        vector3_t hipPositionTouchdown = this->baseTrajectory_[touchdownIdx].head<3>();
+        cost += (projectedPoint - hipPositionTouchdown).norm();
+        if(liftOffIdx < this->baseTrajectory_.size()) {
+            vector3_t hipPositionLiftOff = this->baseTrajectory_[liftOffIdx].head<3>();
+            cost += (projectedPoint - hipPositionLiftOff).norm();
+        }
+        constexpr scalar_t w = 0.02;
+        return w * cost;
+    };
 
     // Project nominal foothold onto the closest region
     const auto projection =

@@ -84,8 +84,7 @@ class LeggedRobotVisualizer : public DummyObserver {
 
     void publishOptimizedStateTrajectory(ros::Time timeStamp, const scalar_array_t &mpcTimeTrajectory,
                                          const vector_array_t &mpcStateTrajectory, const ModeSchedule &modeSchedule);
-    void publishOptimizedStateTrajectoryTF(ros::Time timeStamp, const TargetTrajectories &targetTrajectories,
-                                           const ModeSchedule &modeSchedule);
+    void publishOptimizedStateTrajectoryTF(ros::Time timeStamp, const TargetTrajectories &targetTrajectories);
 
    private:
     LeggedRobotVisualizer(const LeggedRobotVisualizer &) = delete;

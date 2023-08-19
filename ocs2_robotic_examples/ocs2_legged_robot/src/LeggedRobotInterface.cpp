@@ -161,8 +161,11 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
     // Constraint terms
     // friction cone settings
     scalar_t frictionCoefficient = 0.7;
-    RelaxedBarrierPenalty::Config barrierPenaltyConfig;
-    std::tie(frictionCoefficient, barrierPenaltyConfig) = loadFrictionConeSettings(taskFile, verbose);
+    RelaxedBarrierPenalty::Config frictionBarrierPenaltyConfig;
+    std::tie(frictionCoefficient, frictionBarrierPenaltyConfig) = loadFrictionConeSettings(taskFile, verbose);
+
+    // foot placement settings
+    RelaxedBarrierPenalty::Config footPlacementbarrierPenaltyConfig = loadFootPlacementSettings(taskFile, verbose);
 
     bool useAnalyticalGradientsConstraints = false;
     loadData::loadCppDataType(taskFile, "legged_robot_interface.useAnalyticalGradientsConstraints",
@@ -195,7 +198,7 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
         } else {
             problemPtr_->softConstraintPtr->add(
                 footName + "_frictionCone",
-                getFrictionConeSoftConstraint(i, frictionCoefficient, barrierPenaltyConfig));
+                getFrictionConeSoftConstraint(i, frictionCoefficient, frictionBarrierPenaltyConfig));
         }
         problemPtr_->equalityConstraintPtr->add(footName + "_zeroForce", getZeroForceConstraint(i));
         problemPtr_->equalityConstraintPtr->add(
@@ -205,8 +208,9 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
             footName + "_normalVelocity",
             getNormalVelocityConstraint(*eeKinematicsPtr, i, useAnalyticalGradientsConstraints));
 
-        problemPtr_->preJumpSoftConstraintPtr->add(footName + "_placement",
-                                                   getFootPlacementConstraint(*eeKinematicsPtr, i));
+        problemPtr_->preJumpSoftConstraintPtr->add(
+            footName + "_placement",
+            getFootPlacementConstraint(*eeKinematicsPtr, i, footPlacementbarrierPenaltyConfig));
     }
 
     // Pre-computation
@@ -401,14 +405,39 @@ std::unique_ptr<StateInputConstraint> LeggedRobotInterface::getZeroVelocityConst
                                                              eeZeroVelConConfig(modelSettings_.positionErrorGain));
     }
 }
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+
+RelaxedBarrierPenalty::Config LeggedRobotInterface::loadFootPlacementSettings(const std::string &taskFile,
+                                                                              bool verbose) const {
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_info(taskFile, pt);
+    const std::string prefix = "footPlacementSoftConstraint.";
+
+    RelaxedBarrierPenalty::Config barrierPenaltyConfig;
+    if (verbose) {
+        std::cerr << "\n #### Foot placement constraint Settings: ";
+        std::cerr << "\n #### =============================================================================\n";
+    }
+    loadData::loadPtreeValue(pt, barrierPenaltyConfig.mu, prefix + "mu", verbose);
+    loadData::loadPtreeValue(pt, barrierPenaltyConfig.delta, prefix + "delta", verbose);
+    if (verbose) {
+        std::cerr << " #### =============================================================================\n";
+    }
+
+    return std::move(barrierPenaltyConfig);
+}
+
 /******************************************************************************************************/
 /******************************************************************************************************/
 /******************************************************************************************************/
 
 std::unique_ptr<StateCost> LeggedRobotInterface::getFootPlacementConstraint(
-    const EndEffectorKinematics<scalar_t> &eeKinematics, size_t contactPointIndex) {
-    // auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{0.02, 0.02});
-    auto penalty = std::make_unique<RelaxedBarrierPenalty>(RelaxedBarrierPenalty::Config{1.0, 1.5});
+    const EndEffectorKinematics<scalar_t> &eeKinematics, size_t contactPointIndex,
+    const RelaxedBarrierPenalty::Config &barrierPenaltyConfig) {
+    auto penalty = std::make_unique<RelaxedBarrierPenalty>(barrierPenaltyConfig);
     auto constraint = std::make_unique<FootPlacementConstraint>(*referenceManagerPtr_, eeKinematics, contactPointIndex);
     return std::make_unique<StateSoftConstraint>(std::move(constraint), std::move(penalty));
 }

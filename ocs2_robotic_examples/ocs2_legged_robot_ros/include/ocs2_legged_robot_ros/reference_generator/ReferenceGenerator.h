@@ -55,8 +55,6 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     void generateReferenceTrajectory();
     inline void setReferenceTrajectory() { referenceManager_.setTargetTrajectories(targetTrajectory_); }
 
-    void computeBaseOrientation();
-
     // helper functions
     constexpr scalar_t getStanceTime();
     FootState getFootState(bool currentContact, bool nextContact);
@@ -65,7 +63,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
     void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
-                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx);
+                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx, int liftOffIdx);
 
     void generateFootName2IndexMap();
     void generateHipShiftMap();
@@ -80,7 +78,6 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     std::vector<std::array<vector3_t, 4>> footTrajectories_;
     std::array<vector3_t, 4> nextOptimizedFootholds_;
     bool firstRun_;
-    feet_array_t<vector3_t> lastFootholds_;
     std::vector<vector_t> jointTrajectories_;
     feet_array_t<scalar_array_t> liftOffHeightSequence_;
     feet_array_t<scalar_array_t> touchDownHeightSequence_;
