@@ -349,10 +349,11 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getFootPositionTrackingCos
         std::cerr << "footTrackingWeight:\n" << footTrackingWeight * footTrackingWeight << "\n";
         std::cerr << " #### =============================================================================\n";
     }
-
+    
+    constexpr bool recompile = true;
     return std::make_unique<FootPositionTrackingCost>(
         footTrackingWeight, eeKinematics, pinocchioInterfaceCppAd, centroidalModelInfo_, modelName,
-        modelSettings_.modelFolderCppAd, modelSettings_.recompileLibrariesCppAd, modelSettings_.verboseCppAd);
+        modelSettings_.modelFolderCppAd, recompile, modelSettings_.verboseCppAd);
 }
 
 /******************************************************************************************************/

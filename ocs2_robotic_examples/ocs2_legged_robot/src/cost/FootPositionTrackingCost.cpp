@@ -18,7 +18,7 @@ FootPositionTrackingCost::FootPositionTrackingCost(matrix_t QPosition,
                                                    bool recompileLibraries, bool verbose)
     : StateInputCostGaussNewtonAd(),
       endEffectorKinematicsPtr_(endEffectorKinematics.clone()),
-      QPosition_(std::move(QPosition)),
+      QPosition_(QPosition),
       pinocchioInterface_(pinocchioInterface),
       mapping_(centroidalModelInfo.toCppAd()) {
     const size_t nParameters = 3;
@@ -35,12 +35,14 @@ vector_t FootPositionTrackingCost::getParameters(scalar_t time, const TargetTraj
 
 ad_vector_t FootPositionTrackingCost::costVectorFunction(ad_scalar_t time, const ad_vector_t &state,
                                                          const ad_vector_t &input,
-                                                         const ad_vector_t &desiredPosition) const {
+                                                         const ad_vector_t &desiredPosition) {
     // TODO: Because of the constness of this function, I can't use the pinocchioInterface_ directly
-    PinocchioInterfaceCppAd pinocchioInterfaceCopy(pinocchioInterface_);
+    // PinocchioInterfaceCppAd pinocchioInterfaceCopy(pinocchioInterface_);
+    // const auto &model = pinocchioInterfaceCopy.getModel();
+    // auto &data = pinocchioInterfaceCopy.getData();
 
-    const auto &model = pinocchioInterfaceCopy.getModel();
-    auto &data = pinocchioInterfaceCopy.getData();
+    const auto &model = pinocchioInterface_.getModel();
+    auto &data = pinocchioInterface_.getData();
 
     // Get pinocchio joint position
     const ad_vector_t q = mapping_.getPinocchioJointPosition(state);
@@ -50,7 +52,7 @@ ad_vector_t FootPositionTrackingCost::costVectorFunction(ad_scalar_t time, const
     pinocchio::updateFramePlacements(model, data);
 
     // Get end-effector position
-    size_t frameId = model.getBodyId(endEffectorKinematicsPtr_->getIds()[0]);
+    const size_t frameId = model.getBodyId(endEffectorKinematicsPtr_->getIds()[0]);
     ad_vector_t currentPosition = data.oMf[frameId].translation();
 
     // Compute position error

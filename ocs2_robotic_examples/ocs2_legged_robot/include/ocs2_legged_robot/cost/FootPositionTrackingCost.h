@@ -33,9 +33,11 @@ class FootPositionTrackingCost final : public StateInputCostGaussNewtonAd {
 
    protected:
     ad_vector_t costVectorFunction(ad_scalar_t time, const ad_vector_t &state, const ad_vector_t &input,
-                                   const ad_vector_t &desiredPosition) const override;
+                                   const ad_vector_t &desiredPosition) override;
 
-    FootPositionTrackingCost *clone() const override { return new FootPositionTrackingCost(*this); }
+    FootPositionTrackingCost *clone() const override { 
+        std::cout << "Creating a copy" << std::endl;
+        return new FootPositionTrackingCost(*this); }
 
    private:
     std::unique_ptr<EndEffectorKinematics<scalar_t>> endEffectorKinematicsPtr_;

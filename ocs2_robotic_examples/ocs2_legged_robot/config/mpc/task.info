@@ -264,8 +264,8 @@ footPlacementSoftConstraint
 
 footTrackingWeight
 {
-  scaling 1e+0
-  (0,0)   90000       ; x
-  (1,1)   90000       ; y
-  (2,2)   90000       ; z
+  scaling 1
+  (0,0)   900       ; x
+  (1,1)   900       ; y
+  (2,2)   900       ; z
 }
