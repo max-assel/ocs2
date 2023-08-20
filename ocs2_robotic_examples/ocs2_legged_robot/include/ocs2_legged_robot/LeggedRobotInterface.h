@@ -98,9 +98,10 @@ class LeggedRobotInterface final : public RobotInterface {
 
     std::unique_ptr<StateInputCost> getBaseTrackingCost(const std::string &taskFile, const CentroidalModelInfo &info,
                                                         bool verbose);
-    std::unique_ptr<StateCost> getPrejumpTrackingCost(const std::string &taskFile, const CentroidalModelInfo &info,
-                                                      bool verbose);
     matrix_t initializeInputCostWeight(const std::string &taskFile, const CentroidalModelInfo &info);
+    std::unique_ptr<StateInputCost> getFootPositionTrackingCost(const std::string &taskFile,
+                                                           const EndEffectorKinematics<scalar_t> &eeKinematics,
+                                                           const std::string &modelName, bool verbose);
 
     std::pair<scalar_t, RelaxedBarrierPenalty::Config> loadFrictionConeSettings(const std::string &taskFile,
                                                                                 bool verbose) const;

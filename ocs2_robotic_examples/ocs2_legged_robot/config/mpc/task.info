@@ -2,10 +2,10 @@ centroidalModelType             1     // 0: FullCentroidalDynamics, 1: Single Ri
   
 legged_robot_interface
 {
-  verbose                               false  // show the loaded parameters
+  verbose                               true  // show the loaded parameters
   useAnalyticalGradientsDynamics        false
   useAnalyticalGradientsConstraints     false
-  useFootPlacementConstraint            true
+  useFootPlacementConstraint            false
 }
 
 model_settings
@@ -258,6 +258,14 @@ frictionConeSoftConstraint
 footPlacementSoftConstraint
 {
   ; relaxed log barrier parameters
-  mu                     1.0
-  delta                  1.5
+  mu                     1.5
+  delta                  1.0
+}
+
+footTrackingWeight
+{
+  scaling 1e+0
+  (0,0)   90000       ; x
+  (1,1)   90000       ; y
+  (2,2)   90000       ; z
 }

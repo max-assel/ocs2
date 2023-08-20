@@ -220,16 +220,9 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
                 getFootPlacementConstraint(*eeKinematicsPtr, i, footPlacementbarrierPenaltyConfig));
         }
 
-
-        auto createTrackingCost = [&]() -> std::unique_ptr<StateInputCost> {
-            matrix_t QPositionTracking = matrix_t::Identity(3, 3) * sqrt(30.0);
-            const auto pinCppAd = pinocchioInterfacePtr_->toCppAd();
-            return std::make_unique<FootPositionTrackingCost>(
-            footName + "_trackingCost", QPositionTracking, modelSettings_.modelFolderCppAd + "_trackingCost" + footName,
-            modelSettings_.recompileLibrariesCppAd, modelSettings_.verboseCppAd, *eeKinematicsPtr,
-            pinCppAd, centroidalModelInfo_);
-        };
-        problemPtr_->costPtr->add(footName + "_trackingCost", createTrackingCost());
+        const std::string trackingName = footName + "_trackingCost";
+        problemPtr_->costPtr->add(trackingName,
+                                  getFootPositionTrackingCost(taskFile, *eeKinematicsPtr, trackingName, verbose));
     }
 
     // Pre-computation
@@ -336,6 +329,30 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getBaseTrackingCost(const 
 
     return std::make_unique<LeggedRobotStateInputQuadraticCost>(std::move(Q), std::move(R), info,
                                                                 *referenceManagerPtr_);
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+std::unique_ptr<StateInputCost> LeggedRobotInterface::getFootPositionTrackingCost(
+    const std::string &taskFile, const EndEffectorKinematics<scalar_t> &eeKinematics, const std::string &modelName,
+    bool verbose) {
+    matrix_t footTrackingWeight(3, 3);
+    loadData::loadEigenMatrix(taskFile, "footTrackingWeight", footTrackingWeight);
+    footTrackingWeight = footTrackingWeight.cwiseSqrt();
+
+    const auto pinocchioInterfaceCppAd = pinocchioInterfacePtr_->toCppAd();
+
+    if (verbose) {
+        std::cerr << "\n #### Foot position tracking cost for " << modelName << ": ";
+        std::cerr << "\n #### =============================================================================\n";
+        std::cerr << "footTrackingWeight:\n" << footTrackingWeight * footTrackingWeight << "\n";
+        std::cerr << " #### =============================================================================\n";
+    }
+
+    return std::make_unique<FootPositionTrackingCost>(
+        footTrackingWeight, eeKinematics, pinocchioInterfaceCppAd, centroidalModelInfo_, modelName,
+        modelSettings_.modelFolderCppAd, modelSettings_.recompileLibrariesCppAd, modelSettings_.verboseCppAd);
 }
 
 /******************************************************************************************************/
