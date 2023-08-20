@@ -55,6 +55,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/constraint/ZeroVelocityConstraintCppAd.h"
 #include "ocs2_legged_robot/constraint/FootPlacementConstraint.h"
 #include "ocs2_legged_robot/cost/LeggedRobotQuadraticTrackingCost.h"
+#include "ocs2_legged_robot/cost/FootPositionTrackingCost.h"
 #include "ocs2_legged_robot/dynamics/LeggedRobotDynamicsAD.h"
 
 // Boost
@@ -142,6 +143,12 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
     bool useAnalyticalGradientsDynamics = false;
     loadData::loadCppDataType(taskFile, "legged_robot_interface.useAnalyticalGradientsDynamics",
                               useAnalyticalGradientsDynamics);
+
+    bool useFootPlacementConstraint = false;
+    loadData::loadCppDataType(taskFile, "legged_robot_interface.useFootPlacementConstraint",
+                              useFootPlacementConstraint);
+    std::cerr << "Using foot placement constraint: " << useFootPlacementConstraint << std::endl;
+
     std::unique_ptr<SystemDynamicsBase> dynamicsPtr;
     if (useAnalyticalGradientsDynamics) {
         throw std::runtime_error(
@@ -156,7 +163,6 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
 
     // Cost terms
     problemPtr_->costPtr->add("baseTrackingCost", getBaseTrackingCost(taskFile, centroidalModelInfo_, false));
-    problemPtr_->preJumpCostPtr->add("tracking", getPrejumpTrackingCost(taskFile, centroidalModelInfo_, false));
 
     // Constraint terms
     // friction cone settings
@@ -208,9 +214,22 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
             footName + "_normalVelocity",
             getNormalVelocityConstraint(*eeKinematicsPtr, i, useAnalyticalGradientsConstraints));
 
-        problemPtr_->preJumpSoftConstraintPtr->add(
-            footName + "_placement",
-            getFootPlacementConstraint(*eeKinematicsPtr, i, footPlacementbarrierPenaltyConfig));
+        if (useFootPlacementConstraint) {
+            problemPtr_->preJumpSoftConstraintPtr->add(
+                footName + "_placement",
+                getFootPlacementConstraint(*eeKinematicsPtr, i, footPlacementbarrierPenaltyConfig));
+        }
+
+
+        auto createTrackingCost = [&]() -> std::unique_ptr<StateInputCost> {
+            matrix_t QPositionTracking = matrix_t::Identity(3, 3) * sqrt(30.0);
+            const auto pinCppAd = pinocchioInterfacePtr_->toCppAd();
+            return std::make_unique<FootPositionTrackingCost>(
+            footName + "_trackingCost", QPositionTracking, modelSettings_.modelFolderCppAd + "_trackingCost" + footName,
+            modelSettings_.recompileLibrariesCppAd, modelSettings_.verboseCppAd, *eeKinematicsPtr,
+            pinCppAd, centroidalModelInfo_);
+        };
+        problemPtr_->costPtr->add(footName + "_trackingCost", createTrackingCost());
     }
 
     // Pre-computation
@@ -317,16 +336,6 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getBaseTrackingCost(const 
 
     return std::make_unique<LeggedRobotStateInputQuadraticCost>(std::move(Q), std::move(R), info,
                                                                 *referenceManagerPtr_);
-}
-
-/******************************************************************************************************/
-/******************************************************************************************************/
-/******************************************************************************************************/
-std::unique_ptr<StateCost> LeggedRobotInterface::getPrejumpTrackingCost(const std::string &taskFile,
-                                                                        const CentroidalModelInfo &info, bool verbose) {
-    matrix_t Q_prejump(info.stateDim, info.stateDim);
-    loadData::loadEigenMatrix(taskFile, "Q_prejump", Q_prejump);
-    return std::make_unique<LeggedRobotStateQuadraticCost>(std::move(Q_prejump), info, *referenceManagerPtr_);
 }
 
 /******************************************************************************************************/

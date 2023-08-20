@@ -487,7 +487,7 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
                 x1 = footTrajectories_[i_st][legIdx][X_IDX];
                 y1 = footTrajectories_[i_st][legIdx][Y_IDX];
                 liftOffHeightSequence_[legIdx][ii] = gridMapInterface_.atPositionElevation(x1, y1);
-                if (ii <= idxLower_) {
+                if (ii == idxLower_) {
                     lastLiftOffHeight[legIdx] = lastFootholds_[legIdx][Z_IDX];
                 }
             }
@@ -599,15 +599,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
 
     // Setup penalty function
     auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) {
-        scalar_t cost = 0.0;
-        vector3_t hipPositionTouchdown = this->baseTrajectory_[touchdownIdx].head<3>();
-        cost += (projectedPoint - hipPositionTouchdown).norm();
-        if(liftOffIdx < this->baseTrajectory_.size()) {
-            vector3_t hipPositionLiftOff = this->baseTrajectory_[liftOffIdx].head<3>();
-            cost += (projectedPoint - hipPositionLiftOff).norm();
-        }
-        constexpr scalar_t w = 0.02;
-        return w * cost;
+        return 0.0;
     };
 
     // Project nominal foothold onto the closest region

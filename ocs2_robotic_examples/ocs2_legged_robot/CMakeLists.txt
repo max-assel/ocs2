@@ -40,6 +40,7 @@ catkin_package(
   INCLUDE_DIRS
     include
     ${EIGEN3_INCLUDE_DIRS}
+    ${pinocchio_INCLUDE_DIRS}
   LIBRARIES
     ${PROJECT_NAME}
   CATKIN_DEPENDS
@@ -101,6 +102,7 @@ add_library(${PROJECT_NAME}
   src/gait/ModeSequenceTemplate.cpp
   src/LeggedRobotInterface.cpp
   src/LeggedRobotPreComputation.cpp
+  src/cost/FootPositionTrackingCost.cpp
 )
 add_dependencies(${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}

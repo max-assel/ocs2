@@ -5,12 +5,13 @@ legged_robot_interface
   verbose                               false  // show the loaded parameters
   useAnalyticalGradientsDynamics        false
   useAnalyticalGradientsConstraints     false
+  useFootPlacementConstraint            true
 }
 
 model_settings
 {
   positionErrorGain             0.0 ; 20.0
-  phaseTransitionStanceTime     0.4
+  phaseTransitionStanceTime     1.0
 
   verboseCppAd                  true
   recompileLibrariesCppAd       false
@@ -19,9 +20,9 @@ model_settings
 
 swing_trajectory_config
 {
-  liftOffVelocity               0.01
-  touchDownVelocity             -0.01
-  swingHeight                   0.105
+  liftOffVelocity               0.55
+  touchDownVelocity             -0.55
+  swingHeight                   0.080
   touchdownAfterHorizon         0.2
   swingTimeScale                0.15
 }
@@ -138,7 +139,7 @@ mpc
 
   debugPrint                      false
 
-  mpcDesiredFrequency             33 ; [Hz]
+  mpcDesiredFrequency             35 ; [Hz]
   mrtDesiredFrequency            400 ; [Hz]
 }
 
@@ -257,42 +258,6 @@ frictionConeSoftConstraint
 footPlacementSoftConstraint
 {
   ; relaxed log barrier parameters
-  mu                     0.1
-  delta                  0.01
-}
-
-; standard state weight matrix
-Q_prejump
-{
-  scaling 1e+0
-
-  ;; Normalized Centroidal Momentum: [linear, angular] ;;
-  (0,0)   0.0     ; vcom_x
-  (1,1)   0.0     ; vcom_y
-  (2,2)   0.0     ; vcom_z
-  (3,3)   0.0      ; L_x / robotMass
-  (4,4)   0.0     ; L_y / robotMass
-  (5,5)   0.0     ; L_z / robotMass
-
-  ;; Base Pose: [position, orientation] ;;
-  (6,6)   0.0    ; p_base_x
-  (7,7)   0.0    ; p_base_y
-  (8,8)   0.0    ; p_base_z
-  (9,9)   0.0    ; theta_base_z
-  (10,10) 0.0    ; theta_base_y
-  (11,11) 0.0    ; theta_base_x
-
-  ;; Leg Joint Positions: [LF, LH, RF, RH] ;;
-  (13,13) 0.0     ; LF_HFE
-  (12,12) 0.0     ; LF_HAA
-  (14,14) 0.0     ; LF_KFE
-  (15,15) 0.0     ; LH_HAA
-  (16,16) 0.0     ; LH_HFE
-  (17,17) 0.0     ; LH_KFE
-  (18,18) 0.0     ; RF_HAA
-  (19,19) 0.0     ; RF_HFE
-  (20,20) 0.0     ; RF_KFE
-  (21,21) 0.0     ; RH_HAA
-  (22,22) 0.0     ; RH_HFE
-  (23,23) 0.0     ; RH_KFE
+  mu                     1.0
+  delta                  1.5
 }
