@@ -21,7 +21,8 @@ FootPositionTrackingCost::FootPositionTrackingCost(matrix_t QPosition,
       QPosition_(QPosition),
       pinocchioInterface_(pinocchioInterface),
       mapping_(centroidalModelInfo.toCppAd()) {
-    const size_t nParameters = 3;
+    
+    constexpr size_t nParameters = 3;
 
     initialize(centroidalModelInfo.stateDim, centroidalModelInfo.inputDim, nParameters, modelName, modelFolder,
                recompileLibraries, verbose);
@@ -37,10 +38,6 @@ ad_vector_t FootPositionTrackingCost::costVectorFunction(ad_scalar_t time, const
                                                          const ad_vector_t &input,
                                                          const ad_vector_t &desiredPosition) {
     // TODO: Because of the constness of this function, I can't use the pinocchioInterface_ directly
-    // PinocchioInterfaceCppAd pinocchioInterfaceCopy(pinocchioInterface_);
-    // const auto &model = pinocchioInterfaceCopy.getModel();
-    // auto &data = pinocchioInterfaceCopy.getData();
-
     const auto &model = pinocchioInterface_.getModel();
     auto &data = pinocchioInterface_.getData();
 

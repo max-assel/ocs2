@@ -12,6 +12,7 @@ list
   [9] lindyhop
   [10] skipping
   [11] pawup
+  [12] gallop
 }
 
 stance
@@ -252,4 +253,24 @@ pawup
      [0]     0.0
      [1]     2.0
    }
+}
+
+gallop
+{
+  modeSequence
+   {
+     [0]     LH_RH
+     [1]     RF_LH
+     [2]     LF_RF
+     [3]     LF_RH
+   }
+   switchingTimes
+   {
+      [0]     0.00
+      [1]     0.13
+      [2]     0.26
+      [3]     0.39
+      [4]     0.52
+   }
+
 }
