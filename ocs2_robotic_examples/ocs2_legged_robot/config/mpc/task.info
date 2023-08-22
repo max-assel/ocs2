@@ -259,7 +259,7 @@ footPlacementSoftConstraint
 {
   ; relaxed log barrier parameters
   mu                     1.5
-  delta                  1.0
+  delta                  1.5
 }
 
 footTrackingWeight

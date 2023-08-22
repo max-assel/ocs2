@@ -48,7 +48,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     void computeSamplingTimes(scalar_t initTime, scalar_t finalTime, const ReferenceManagerInterface &referenceManager);
     void computeContactFlags(const ReferenceManagerInterface &referenceManager);
     void computeBaseTrajectory(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
-    void computeFootTrajectories(const vector3_t &currentState, const ReferenceManagerInterface &referenceManager);
+    void computeFootTrajectories(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
     void setContactHeights(scalar_t currentTime);
     void computeFootTrajectoriesZ();
     void computeBaseTrajectoryZ();

@@ -140,7 +140,7 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     auto duration_t6 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t6 - start_t6).count() / 1e3;
 
     auto start_t7 = std::chrono::high_resolution_clock::now();
-    // computeBaseTrajectoryZ();
+    computeBaseTrajectoryZ();
     auto end_t7 = std::chrono::high_resolution_clock::now();
     auto duration_t7 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t7 - start_t7).count() / 1e3;
 
@@ -266,8 +266,8 @@ void ReferenceGenerator::computeBaseTrajectory(const vector_t &currentState,
         yawcos = std::cos(basePose[YAW_IDX]);
 
         // Express velocities in the world frame
-        vx_world = vx_ * yawsin - vy_ * yawcos;
-        vy_world = vx_ * yawcos + vy_ * yawsin;
+        vx_world = vx_ * yawcos - vy_ * yawsin;
+        vy_world = vx_ * yawsin + vy_ * yawcos;
 
         // Compute time step
         dt = samplingTimes_[i] - samplingTimes_[i - 1];
@@ -369,13 +369,25 @@ void ReferenceGenerator::generateDefaultProjectedHipPositions() {
     }
 }
 
-void ReferenceGenerator::computeFootTrajectories(const vector3_t &currentState,
+void ReferenceGenerator::computeFootTrajectories(const vector_t &currentState,
                                                  const ReferenceManagerInterface &referenceManager) {
     // 1. Set feet trajectories size
     footTrajectories_.resize(samplingTimes_.size());
 
     // 2. Get mode schedule
     const auto &modeSchedule = referenceManager.getModeSchedule();
+
+    // Set last footholds
+    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
+        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
+        switch (state) {
+            case FootState::CONTACT:
+            case FootState::NEW_SWING:
+            case FootState::NEW_CONTACT:
+                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
+                break;
+        }
+    }
 
     // 3. Compute forward kinematics
     const auto &model = pinocchioInterface_.getModel();
@@ -604,7 +616,13 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     const auto &map = gridMapInterface_.getMap();
 
     // Setup penalty function
-    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) { return 0.0; };
+    auto penaltyFunction = [this, touchdownIdx, liftOffIdx, legIdx](const Eigen::Vector3d &projectedPoint) {
+        scalar_t cost = 0.0;
+        constexpr scalar_t w_kinematics = 0.1;
+        cost += w_kinematics * (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
+        cost += w_kinematics * (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
+        return cost;
+    };
 
     // Project nominal foothold onto the closest region
     const auto projection =
