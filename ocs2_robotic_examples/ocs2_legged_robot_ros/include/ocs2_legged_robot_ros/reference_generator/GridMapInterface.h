@@ -23,6 +23,7 @@ class GridMapInterface {
    public:
     GridMapInterface(::ros::NodeHandle &nh, std::string mapTopic, bool useGridMap);
     scalar_t atPositionElevation(scalar_t x, scalar_t y);
+    scalar_t atPositionElevationSmooth(scalar_t x, scalar_t y);
     inline grid_map::GridMap &getMap() { return planarTerrainPtr->gridMap; }
     inline std::vector<convex_plane_decomposition::PlanarRegion> &getPlanarRegions() {
         return planarTerrainPtr->planarRegions;

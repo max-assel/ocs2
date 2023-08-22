@@ -34,6 +34,12 @@ void GridMapInterface::mapCallback(const convex_plane_decomposition_msgs::Planar
         std::unique_ptr<convex_plane_decomposition::PlanarTerrain> newTerrain(
             new convex_plane_decomposition::PlanarTerrain(convex_plane_decomposition::fromMessage(*msg)));
         planarTerrainPtr.swap(newTerrain);
+
+        auto &map = getMap();
+        std::cout << "Grid map layers:" << std::endl;
+        for(const auto &layer : map.getLayers()) {
+            std::cout << layer << std::endl;
+        }
     }
 }
 
@@ -53,6 +59,25 @@ scalar_t GridMapInterface::atPositionElevation(scalar_t x, scalar_t y) {
     }
 
     return map.atPosition("elevation", pos_);
+}
+
+
+scalar_t GridMapInterface::atPositionElevationSmooth(scalar_t x, scalar_t y) {
+    if(!useGridmap_) {
+        return 0.0;
+    }
+
+
+
+    const auto &map = getMap();
+    pos_[0] = x;
+    pos_[1] = y;
+
+    if(!map.isInside(pos_)) {
+        return 0.0;
+    }
+
+    return map.atPosition("smooth_planar", pos_);
 }
 
 }  // namespace legged_robot

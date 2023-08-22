@@ -87,8 +87,8 @@ ReferenceGenerator::ReferenceGenerator(::ros::NodeHandle &nh, const std::string 
     // Generate foot name to index map
     generateFootName2IndexMap();
 
-    // Generate hip shift map
-    generateHipShiftMap();
+    // Compute default projected hip positions
+    generateDefaultProjectedHipPositions();
 
     // Initialize book-kepping variables
     firstContactInitialized_ = {false, false, false, false};
@@ -119,15 +119,13 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
 
     // Compute base trajectory
     auto start_t3 = std::chrono::high_resolution_clock::now();
-    computeTrajectoryXY(currentState, referenceManager);
-    // computeBaseTrajectoryXY(currentState);
+    computeBaseTrajectory(currentState, referenceManager);
     auto end_t3 = std::chrono::high_resolution_clock::now();
     auto duration_t3 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t3 - start_t3).count() / 1e3;
 
     // Compute foot trajectories ... we are bottlenecking here
     auto start_t4 = std::chrono::high_resolution_clock::now();
-    // computeFootTrajectoriesXY(currentState, referenceManager);
-    computeBaseOrientation();
+    computeFootTrajectories(currentState, referenceManager);
     auto end_t4 = std::chrono::high_resolution_clock::now();
     auto duration_t4 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t4 - start_t4).count() / 1e3;
 
@@ -142,7 +140,7 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
     auto duration_t6 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t6 - start_t6).count() / 1e3;
 
     auto start_t7 = std::chrono::high_resolution_clock::now();
-    computeBaseTrajectoryZ();
+    // computeBaseTrajectoryZ();
     auto end_t7 = std::chrono::high_resolution_clock::now();
     auto duration_t7 = std::chrono::duration_cast<std::chrono::nanoseconds>(end_t7 - start_t7).count() / 1e3;
 
@@ -245,20 +243,141 @@ void ReferenceGenerator::computeContactFlags(const ReferenceManagerInterface &re
     computeContactFlags(contactFlagsNext_, teps_);
 }
 
-void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
-                                             const ReferenceManagerInterface &referenceManager) {
-    // 1. Set trajectory size
-    baseTrajectory_.clear();
-    baseTrajectory_.reserve(samplingTimes_.size());
+void ReferenceGenerator::computeBaseTrajectory(const vector_t &currentState,
+                                               const ReferenceManagerInterface &referenceManager) {
+    // 1. Set base trajectory size
+    baseTrajectory_.resize(samplingTimes_.size());
+    hipPositions_.resize(samplingTimes_.size());
 
-    // 2. get current base pose
+    // 2. Get current base pose
     vector6_t basePose = centroidal_model::getBasePose(currentState, modelInfo_);
 
-    // 3. set nominal base pitch and roll
-    basePose[PITCH_IDX] = 0.0;
-    basePose[ROLL_IDX] = 0.0;
+    // 3. Compute nominal base pose for initial time
+    scalar_t yawsin = std::sin(basePose[YAW_IDX]);
+    scalar_t yawcos = std::cos(basePose[YAW_IDX]);
+    computeFullBasePose(basePose, hipPositions_[0], yawsin, yawcos);
+    baseTrajectory_[0] = basePose;
 
-    // 4. Compute forward kinematics
+    // 4. Compute nominal base pose for the rest of the trajectory
+    scalar_t dt, vx_world, vy_world;
+    for (size_t i = 1; i < samplingTimes_.size(); ++i) {
+        // Compute sine and cosine of the current yaw angle
+        yawsin = std::sin(basePose[YAW_IDX]);
+        yawcos = std::cos(basePose[YAW_IDX]);
+
+        // Express velocities in the world frame
+        vx_world = vx_ * yawsin - vy_ * yawcos;
+        vy_world = vx_ * yawcos + vy_ * yawsin;
+
+        // Compute time step
+        dt = samplingTimes_[i] - samplingTimes_[i - 1];
+
+        // Integrate
+        basePose[X_IDX] += vx_world * dt;
+        basePose[Y_IDX] += vy_world * dt;
+        basePose[YAW_IDX] += yrate_ * dt;
+
+        // Compute base orientation and store hip positions
+        computeFullBasePose(basePose, hipPositions_[i], yawsin, yawcos);
+
+        baseTrajectory_[i] = basePose;
+    }
+}
+
+void ReferenceGenerator::computeFullBasePose(vector6_t &basePose, matrix34_t &hipPositions, scalar_t yawsin,
+                                             scalar_t yawcos) {
+    // Nominal hip positions considering no roll and pitch
+    computeNominalHipPositions(basePose, hipPositions, yawsin, yawcos);
+
+    // Compute nominal hip position Z coordinate
+    for (size_t i = 0; i < 4; ++i) {
+        hipPositions(2, i) =
+            gridMapInterface_.atPositionElevationSmooth(hipPositions(X_IDX, i), hipPositions(Y_IDX, i)) + comHeight_;
+    }
+
+    // Fit a plane through the nominal hip positions
+    matrix_t A(4, 3);
+    A.block<4, 2>(0, 0) = hipPositions.transpose().block<4, 2>(0, 0);
+    A.block<4, 1>(0, 2) = vector_t::Ones(4);
+    vector_t b = -hipPositions.transpose().col(2);
+
+    const vector_t planeParams = A.colPivHouseholderQr().solve(b);
+    const scalar_t an = planeParams[0];
+    const scalar_t bn = planeParams[1];
+    const scalar_t cn = 1.0;
+    const scalar_t dn = planeParams[2];
+
+    // plane normal vector
+    vector_t n = (vector_t(3) << an, bn, cn).finished();
+    n = n / n.norm();
+
+    // Nominal direction of the x-axis
+    vector_t x_axis = (vector_t(3) << yawcos, yawsin, 0.0).finished();
+
+    // Nominal direction of the y-axis
+    vector_t y_axis = (vector_t(3) << -yawsin, yawcos, 0.0).finished();
+
+    // Projected x-axis
+    vector_t x_proj = x_axis - x_axis.dot(n) * n;
+    x_proj = x_proj / x_proj.norm();
+
+    // Projected y-axis
+    vector_t y_proj = y_axis - y_axis.dot(n) * n;
+    y_proj = y_proj / y_proj.norm();
+
+    // Compute rpy angles
+    matrix3_t R;
+    R.col(0) = x_proj;
+    R.col(1) = y_proj;
+    R.col(2) = n;
+    const vector_t rpy = pinocchio::rpy::matrixToRpy(R);
+
+    // basePose[YAW_IDX] = rpy[2]  <-- not needed here
+    basePose[PITCH_IDX] = rpy[1];
+    basePose[ROLL_IDX] = rpy[0];
+    basePose[Z_IDX] = hipPositions.row(2).mean();
+
+    // Update hip positions
+    hipPositions = R * getDefaultProjectedHipPositions() + basePose.head<3>().replicate<1, 4>();
+}
+
+void ReferenceGenerator::computeNominalHipPositions(const vector6_t &basePose, matrix34_t &hipPositions,
+                                                    scalar_t yawsin, scalar_t yawcos) {
+    matrix3_t R = (matrix3_t() << yawcos, -yawsin, 0.0,  // clang-format off
+                                  yawsin,  yawcos, 0.0,
+                                  0.0,     0.0,    1.0).finished();  // clang-format on
+    hipPositions = R * getDefaultProjectedHipPositions() + basePose.head<3>().replicate<1, 4>();
+}
+
+void ReferenceGenerator::generateDefaultProjectedHipPositions() {
+    // 1. Create state vector - 6 base states + 12 joint states
+    vector_t robotState = (vector_t(6 + 12) << vector_t::Zero(6), defaultJointState_).finished();
+
+    // 2. Unpack pinocchio model and data
+    const auto &model = pinocchioInterface_.getModel();
+    auto &data = pinocchioInterface_.getData();
+
+    // 3. Compute forward kinematics
+    pinocchio::framesForwardKinematics(model, data, robotState);
+
+    // 4. Compute default projected hip positions
+    for (size_t i = 0; i < modelSettings_.contactNames3DoF.size(); ++i) {
+        size_t frameIdx = model.getFrameId(modelSettings_.contactNames3DoF[i]);
+        vector3_t hipPosition = data.oMf[frameIdx].translation();
+        hipPosition[2] = 0.0;  // Project onto the ground
+        defaultProjectedHipPositions_.col(i) = hipPosition;
+    }
+}
+
+void ReferenceGenerator::computeFootTrajectories(const vector3_t &currentState,
+                                                 const ReferenceManagerInterface &referenceManager) {
+    // 1. Set feet trajectories size
+    footTrajectories_.resize(samplingTimes_.size());
+
+    // 2. Get mode schedule
+    const auto &modeSchedule = referenceManager.getModeSchedule();
+
+    // 3. Compute forward kinematics
     const auto &model = pinocchioInterface_.getModel();
     auto &data = pinocchioInterface_.getData();
     pinocchio::forwardKinematics(model, data, centroidal_model::getGeneralizedCoordinates(currentState, modelInfo_));
@@ -266,71 +385,19 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
         pinocchio::updateFramePlacement(model, data, model.getFrameId(footName));
     }
 
-    // 5. Set initial base position
-    baseTrajectory_.push_back(basePose);
-
-    // 6. Set initial foot position
+    // 4. Set initial foot position
     auto setInitialFootPosition = [this, &model, &data](const std::string &footName) {
         footTrajectories_[0][footName2Index(footName)] = data.oMf[model.getFrameId(footName)].translation();
     };
-    footTrajectories_.clear();
-    footTrajectories_.resize(samplingTimes_.size());
     for (const std::string &footName : modelSettings_.contactNames3DoF) {
         setInitialFootPosition(footName);
     }
 
-    // Set last footholds
-    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
-        switch (state) {
-            case FootState::CONTACT:
-            case FootState::NEW_SWING:
-            case FootState::NEW_CONTACT:
-                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
-                break;
-        }
-    }
-
-    // 6. Get mode schedule
-    const auto &modeSchedule = referenceManager.getModeSchedule();
-
-    // Set last footholds
-    for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
-        FootState state = getFootState(contactFlagsAt_[0][legIdx], contactFlagsNext_[0][legIdx]);
-        switch (state) {
-            case FootState::CONTACT:
-            case FootState::NEW_SWING:
-            case FootState::NEW_CONTACT:
-                lastFootholds_[legIdx] = footTrajectories_[0][legIdx];
-                break;
-        }
-    }
-
     std::array<bool, 4> firstTouchdown = {true, true, true, true};
-
-    // 4. Compute the rest of trajectory
-    scalar_t time_delta, yaw_s, yaw_c, vx, vy;
     auto currentswingPhases = getSwingPhasePerLeg(samplingTimes_[0], modeSchedule);
+
     for (size_t i = 1; i < samplingTimes_.size(); ++i) {
-        // BASE
-        basePose = baseTrajectory_[i - 1];
-
-        time_delta = samplingTimes_[i] - samplingTimes_[i - 1];
-        yaw_s = std::sin(basePose[YAW_IDX]);
-        yaw_c = std::cos(basePose[YAW_IDX]);
-
-        // express velocities in the world frame
-        vx = vx_ * yaw_c - vy_ * yaw_s;
-        vy = vx_ * yaw_s + vy_ * yaw_c;
-
-        // integrate velocity
-        basePose[X_IDX] += vx * time_delta;
-        basePose[Y_IDX] += vy * time_delta;
-        basePose[YAW_IDX] += yrate_ * time_delta;
-
-        baseTrajectory_.push_back(basePose);
-
-        // FEET
+        // Get current swing phases
         auto swingPhases = getSwingPhasePerLeg(samplingTimes_[i], modeSchedule);
         for (size_t legIdx = 0; legIdx < modelInfo_.numThreeDofContacts; ++legIdx) {
             FootState state = getFootState(contactFlagsAt_[i][legIdx], contactFlagsNext_[i][legIdx]);
@@ -338,76 +405,28 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                 case FootState::CONTACT:  // deliberate fall-through
                 case FootState::NEW_SWING:
                     footTrajectories_[i][legIdx] = footTrajectories_[i - 1][legIdx];  // copy the last position
-                    if (optimizeFootholds_) {
-                        firstTouchdown[legIdx] = false;
-                    }
                     break;
                 case FootState::NEW_CONTACT: {
                     scalar_t stanceTime = getStanceTime();
                     const scalar_t phase = 1.0;
-                    footTrajectories_[i][legIdx] = raibertHeuristic(
-                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
-                    footTrajectories_[i][legIdx][Z_IDX] = footTrajectories_[i - 1][legIdx][Z_IDX];
-                    if (optimizeFootholds_) {
-                        optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
-                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i, i+1); // Only valid for trot gait
-                        firstTouchdown[legIdx] = false;
-                    }
+                    footTrajectories_[i][legIdx] =
+                        raibertHeuristic(baseTrajectory_[i], hipPositions_[i].col(legIdx),
+                                         footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                    footTrajectories_[i][legIdx][Z_IDX] = baseTrajectory_[i][Z_IDX] - comHeight_;
+                    optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
+                                     currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i,
+                                     i + 1);  // Only valid for trot gait
+                    firstTouchdown[legIdx] = false;
                 } break;
                 case FootState::SWING: {
                     scalar_t stanceTime = getStanceTime();
                     const scalar_t phase = swingPhases[legIdx].phase;
-                    footTrajectories_[i][legIdx] = raibertHeuristic(
-                        baseTrajectory_[i], footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
+                    footTrajectories_[i][legIdx] =
+                        raibertHeuristic(baseTrajectory_[i], hipPositions_[i].col(legIdx),
+                                         footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
                 } break;  // raibert heuristic -> phase = whatever ocs2 tells us
             }
         }
-    }
-}
-
-void ReferenceGenerator::computeBaseOrientation() {
-    for (int i = 0; i < samplingTimes_.size(); ++i) {
-        matrix_t A(4, 3);
-        vector_t b(4);
-
-        for (int i = 0; i < 4; ++i) {
-            A.block<1, 2>(i, 0) = lastFootholds_[i].head<2>();
-            A(i, 2) = 1.0;
-            b(i) = -lastFootholds_[i][2];
-        }
-
-        vector_t x = A.colPivHouseholderQr().solve(b);
-        const scalar_t an = x[0];
-        const scalar_t bn = x[1];
-        const scalar_t cn = 1.0;
-        const scalar_t dn = x[2];
-
-        vector_t n = (vector_t(3) << an, bn, cn).finished();
-        n = n / n.norm();
-
-        scalar_t yaw = baseTrajectory_[i][YAW_IDX];
-        scalar_t yaw_s = std::sin(yaw);
-        scalar_t yaw_c = std::cos(yaw);
-
-        vector_t x_axis = (vector_t(3) << yaw_c, yaw_s, 0.0).finished();
-        vector_t y_axis = (vector_t(3) << -yaw_s, yaw_c, 0.0).finished();
-
-        vector_t x_proj = x_axis - x_axis.dot(n) * n;
-        vector_t y_proj = y_axis - y_axis.dot(n) * n;
-
-        x_proj = x_proj / x_proj.norm();
-        y_proj = y_proj / y_proj.norm();
-
-        matrix3_t R;
-        R.col(0) = x_proj;
-        R.col(1) = y_proj;
-        R.col(2) = n;
-
-        vector_t rpy = pinocchio::rpy::matrixToRpy(R);
-
-        // baseTrajectory_[i][YAW_IDX] = rpy[2];
-        baseTrajectory_[i][PITCH_IDX] = rpy[1];
-        baseTrajectory_[i][ROLL_IDX] = rpy[0];
     }
 }
 
@@ -553,24 +572,10 @@ FootState ReferenceGenerator::getFootState(bool currentContact, bool nextContact
     return nextContact ? FootState::NEW_CONTACT : FootState::SWING;
 }
 
-vector3_t ReferenceGenerator::getHipPosition(const vector6_t &basePose, size_t legIdx) {
-    const scalar_t yaw = basePose[YAW_IDX];
-    const auto R = pinocchio::rpy::rpyToMatrix(0.0, 0.0, yaw);  // roll = 0.0, pitch = 0.0
-    return basePose.head<3>() + R * hipShiftMap_[legIdx];
-}
-
-vector3_t ReferenceGenerator::getProjectedHipPosition(const vector6_t &basePose, size_t legIdx) {
-    auto hipPosition = getHipPosition(basePose, legIdx);
-    hipPosition[2] = 0.0;  // Project onto the ground
-    return hipPosition;
-}
-
-vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector3_t &footPositionPrev, size_t legIdx,
-                                               scalar_t phase, scalar_t stanceTime) {
-    // 1. Get desired hip position
-    const vector3_t hipPosition = getProjectedHipPosition(basePose, legIdx);
-
-    // 2. Compute world velocity vector
+vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, const vector3_t &hipPosition,
+                                               vector3_t &footPositionPrev, size_t legIdx, scalar_t phase,
+                                               scalar_t stanceTime) {
+    // 1. Compute world velocity vector
     const scalar_t yaw_s = std::sin(basePose[YAW_IDX]);
     const scalar_t yaw_c = std::cos(basePose[YAW_IDX]);
 
@@ -584,7 +589,8 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
 }
 
 void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
-                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx, int liftOffIdx) {
+                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx,
+                                          int touchdownIdx, int liftOffIdx) {
     // Too late to optimize - use the last optimized foothold
     vector3_t diff = vector3_t::Zero();
     if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
@@ -598,9 +604,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     const auto &map = gridMapInterface_.getMap();
 
     // Setup penalty function
-    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) {
-        return 0.0;
-    };
+    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) { return 0.0; };
 
     // Project nominal foothold onto the closest region
     const auto projection =
@@ -631,26 +635,6 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
 void ReferenceGenerator::generateFootName2IndexMap() {
     for (size_t i = 0; i < modelSettings_.contactNames3DoF.size(); ++i) {
         footName2IndexMap_[modelSettings_.contactNames3DoF[i]] = i;
-    }
-}
-
-void ReferenceGenerator::generateHipShiftMap() {
-    // 1. Create state vector - 6 base states + 12 joint states
-    vector_t robotState = (vector_t(6 + 12) << vector_t::Zero(6), defaultJointState_).finished();
-
-    // 2. Unpack pinocchio model and data
-    const auto &model = pinocchioInterface_.getModel();
-    auto &data = pinocchioInterface_.getData();
-
-    // 3. Compute forward kinematics
-    pinocchio::framesForwardKinematics(model, data, robotState);
-
-    // 4. Compute hip shift map
-    for (size_t i = 0; i < modelSettings_.contactNames3DoF.size(); ++i) {
-        size_t frameIdx = model.getFrameId(modelSettings_.contactNames3DoF[i]);
-        vector3_t hipPosition = data.oMf[frameIdx].translation();
-        hipPosition[2] = 0.0;  // Project onto the ground
-        hipShiftMap_[i] = hipPosition;
     }
 }
 

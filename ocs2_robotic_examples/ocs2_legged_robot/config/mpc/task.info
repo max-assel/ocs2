@@ -5,7 +5,7 @@ legged_robot_interface
   verbose                               true  // show the loaded parameters
   useAnalyticalGradientsDynamics        false
   useAnalyticalGradientsConstraints     false
-  useFootPlacementConstraint            false
+  useFootPlacementConstraint            true
 }
 
 model_settings
