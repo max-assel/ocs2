@@ -449,10 +449,12 @@ void ReferenceGenerator::computeBaseTrajectoryZ() {
         n_contacts = 0.0;
         total = 0.0;
         scalar_t lowest = std::numeric_limits<scalar_t>::max();
+        scalar_t highest = std::numeric_limits<scalar_t>::min();
         for (size_t j = 0; j < 4; ++j) {
             if (contactFlagsNext_[i][j]) {
                 total += footTrajectories_[i][j][Z_IDX];
                 if (footTrajectories_[i][j][Z_IDX] < lowest) lowest = footTrajectories_[i][j][Z_IDX];
+                if (footTrajectories_[i][j][Z_IDX] > highest) highest = footTrajectories_[i][j][Z_IDX];
                 n_contacts += 1.0;
             }
         }
@@ -460,7 +462,8 @@ void ReferenceGenerator::computeBaseTrajectoryZ() {
         // Set base height
         if (n_contacts > 0.0) {
             // baseTrajectory_[i][Z_IDX] = lowest + comHeight_;  // some legs in contact
-            baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
+            // baseTrajectory_[i][Z_IDX] = total / n_contacts + comHeight_;  // some legs in contact
+            baseTrajectory_[i][Z_IDX] = (lowest + highest) / 2 + comHeight_;  // some legs in contact
         } else if (i > 0) {
             baseTrajectory_[i][Z_IDX] = baseTrajectory_[i - 1][Z_IDX];  // all legs in the air, use previous height
         }
@@ -618,7 +621,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     // Setup penalty function
     auto penaltyFunction = [this, touchdownIdx, liftOffIdx, legIdx](const Eigen::Vector3d &projectedPoint) {
         scalar_t cost = 0.0;
-        constexpr scalar_t w_kinematics = 0.1;
+        constexpr scalar_t w_kinematics = 0.2;
         cost += w_kinematics * (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
         cost += w_kinematics * (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
         return cost;
