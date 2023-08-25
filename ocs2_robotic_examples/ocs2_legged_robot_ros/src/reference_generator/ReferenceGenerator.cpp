@@ -528,6 +528,14 @@ void ReferenceGenerator::setContactHeights(scalar_t currentTime) {
         }
     }
 
+    if(useGridmap_) {
+        for (int i = 0; i < 4; ++i) {
+            std::fill(liftOffHeightSequence_[i].begin(), liftOffHeightSequence_[i].begin() + idxLower_, lastFootholds_[i][Z_IDX]);
+            std::fill(touchDownHeightSequence_[i].begin(), touchDownHeightSequence_[i].begin() + idxLower_, lastFootholds_[i][Z_IDX]);
+        }
+    }
+
+
     if (!useGridmap_) {
         for (int i = 0; i < 4; ++i) {
             std::fill(liftOffHeightSequence_[i].begin(), liftOffHeightSequence_[i].end(), lastFootholds_[i][Z_IDX]);
@@ -622,8 +630,19 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     auto penaltyFunction = [this, touchdownIdx, liftOffIdx, legIdx](const Eigen::Vector3d &projectedPoint) {
         scalar_t cost = 0.0;
         constexpr scalar_t w_kinematics = 0.2;
-        cost += w_kinematics * (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
-        cost += w_kinematics * (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
+        const scalar_t dist1 = (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
+        const scalar_t dist2 = (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
+        cost += w_kinematics * dist1;
+        cost += w_kinematics * dist2;
+
+        if(dist1 >= 0.60 || dist2 >= 0.60) {
+            cost += 1e4;
+        }
+
+        if(dist1 <= 0.2 || dist2 <= 0.2) {
+            cost += 1e4;
+        }
+        
         return cost;
     };
 
