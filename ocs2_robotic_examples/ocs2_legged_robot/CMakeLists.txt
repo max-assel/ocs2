@@ -15,6 +15,7 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   ocs2_pinocchio_interface
   ocs2_centroidal_model
   ocs2_robotic_assets
+  grid_map_sdf
   convex_plane_decomposition
 )
 

@@ -192,6 +192,9 @@ void ReferenceGenerator::preSolverRun(scalar_t initTime, scalar_t finalTime, con
         ++counter;
     }
 
+    // Set latest signed distance field pointer
+    referenceManager_.sdfPtr = &gridMapInterface_.getSDF();
+
     firstRun_ = false;
 }
 

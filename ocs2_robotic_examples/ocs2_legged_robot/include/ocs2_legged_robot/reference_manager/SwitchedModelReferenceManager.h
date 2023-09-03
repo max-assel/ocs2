@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/gait/GaitSchedule.h"
 #include "ocs2_legged_robot/gait/MotionPhaseDefinition.h"
 
+#include <grid_map_sdf/SignedDistanceField.hpp>
 #include <convex_plane_decomposition/PolygonTypes.h>
 
 namespace ocs2 {
@@ -63,6 +64,8 @@ class SwitchedModelReferenceManager : public ReferenceManager {
   feet_array_t<Eigen::Isometry3d> *convexRegionWorldTransformsPtr;
   feet_array_t<scalar_t> *firstContactTimesPtr;
   feet_array_t<bool> *firstContactInitializedPtr;
+
+  grid_map::SignedDistanceField *sdfPtr;
 
  private:
   void modifyReferences(scalar_t initTime, scalar_t finalTime, const vector_t& initState, TargetTrajectories& targetTrajectories,
