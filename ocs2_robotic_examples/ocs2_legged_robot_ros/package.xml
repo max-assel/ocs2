@@ -22,6 +22,7 @@
   <depend>grid_map_core</depend>
   <depend>grid_map_ros</depend>
   <depend>grid_map_pcl</depend>
+  <depend>grid_map_sdf</depend>
   <depend>convex_plane_decomposition</depend>
   <depend>convex_plane_decomposition_ros</depend>
   <depend>convex_plane_decomposition_msgs</depend>
