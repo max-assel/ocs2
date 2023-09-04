@@ -90,5 +90,24 @@ scalar_t GridMapInterface::atPositionElevation(scalar_t x, scalar_t y) {
     return map.atPosition("elevation", pos_);
 }
 
+
+scalar_t GridMapInterface::atPositionElevationSmooth(scalar_t x, scalar_t y) {
+    if(!useGridmap_) {
+        return 0.0;
+    }
+
+
+
+    const auto &map = getMap();
+    pos_[0] = x;
+    pos_[1] = y;
+
+    if(!map.isInside(pos_)) {
+        return 0.0;
+    }
+
+    return map.atPosition("smooth_planar", pos_);
+}
+
 }  // namespace legged_robot
 }  // namespace ocs2

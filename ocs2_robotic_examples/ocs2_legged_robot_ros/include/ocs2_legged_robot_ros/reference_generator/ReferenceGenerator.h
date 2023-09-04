@@ -26,6 +26,7 @@ namespace legged_robot {
 
 enum class FootState { CONTACT, NEW_CONTACT, SWING, NEW_SWING };
 using vector6_t = Eigen::Matrix<scalar_t, 6, 1>;
+using matrix34_t = Eigen::Matrix<scalar_t, 3, 4>;
 
 class ReferenceGenerator : public SolverSynchronizedModule {
    public:
@@ -46,8 +47,8 @@ class ReferenceGenerator : public SolverSynchronizedModule {
    private:
     void computeSamplingTimes(scalar_t initTime, scalar_t finalTime, const ReferenceManagerInterface &referenceManager);
     void computeContactFlags(const ReferenceManagerInterface &referenceManager);
-    void computeTrajectoryXY(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
-    void computeBaseOrientation();
+    void computeBaseTrajectory(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
+    void computeFootTrajectories(const vector_t &currentState, const ReferenceManagerInterface &referenceManager);
     void setContactHeights(scalar_t currentTime);
     void computeFootTrajectoriesZ();
     void computeBaseTrajectoryZ();
@@ -55,20 +56,25 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     void generateReferenceTrajectory();
     inline void setReferenceTrajectory() { referenceManager_.setTargetTrajectories(targetTrajectory_); }
 
+
     // helper functions
     constexpr scalar_t getStanceTime();
     FootState getFootState(bool currentContact, bool nextContact);
-    vector3_t getHipPosition(const vector6_t &basePose, size_t legIdx);
-    vector3_t getProjectedHipPosition(const vector6_t &basePose, size_t legIdx);
-    vector3_t raibertHeuristic(const vector6_t &basePose, vector3_t &previousFootPosition, size_t legIdx,
+    vector3_t raibertHeuristic(const vector6_t &basePose, const vector3_t &hipPosition, vector3_t &previousFootPosition, size_t legIdx,
                                scalar_t phase, scalar_t stanceTime);
     void optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
-                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx, int liftOffIdx);
+                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx,
+                          int liftOffIdx);
 
     void generateFootName2IndexMap();
-    void generateHipShiftMap();
     size_t footName2Index(const std::string &footName) { return footName2IndexMap_[footName]; }
     size_t footName2Index(const char *footName) { return footName2IndexMap_[std::string(footName)]; }
+
+    void computeFullBasePose(vector6_t &basePose, matrix34_t &hipPositions, scalar_t yawsin, scalar_t yawcos);
+    void computeNominalHipPositions(const vector6_t &basePose, matrix34_t &hipPositions, scalar_t yawsin,
+                                    scalar_t yawcos);
+    inline matrix34_t getDefaultProjectedHipPositions(){return defaultProjectedHipPositions_;};
+    void generateDefaultProjectedHipPositions();
 
    public:
     std::vector<scalar_t> samplingTimes_;
@@ -92,9 +98,7 @@ class ReferenceGenerator : public SolverSynchronizedModule {
    private:
     const scalar_t teps_;
     std::unordered_map<std::string, size_t> footName2IndexMap_;
-    std::array<vector3_t, 4> hipShiftMap_;
 
-   private:
     ::ros::Subscriber joystickSubscriber_;
     PinocchioInterface pinocchioInterface_;
     SwitchedModelReferenceManager &referenceManager_;
@@ -117,6 +121,9 @@ class ReferenceGenerator : public SolverSynchronizedModule {
     feet_array_t<scalar_t> firstContactTimes_;
     feet_array_t<Eigen::Isometry3d> convexRegionWorldTransforms_;
     feet_array_t<convex_plane_decomposition::CgalPolygon2d> convexRegions_;
+
+    std::vector<matrix34_t> hipPositions_;
+    matrix34_t defaultProjectedHipPositions_;
 
     // Default base height above the ground
     scalar_t comHeight_;
