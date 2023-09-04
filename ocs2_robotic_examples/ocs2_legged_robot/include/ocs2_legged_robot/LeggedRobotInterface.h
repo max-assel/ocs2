@@ -46,6 +46,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ocs2_legged_robot/initialization/LeggedRobotInitializer.h"
 #include "ocs2_legged_robot/reference_manager/SwitchedModelReferenceManager.h"
 
+#include "ocs2_legged_robot/constraint/EndEffectorDistanceConstraint.h"
 /**
  * LeggedRobotInterface class
  * General interface for mpc implementation on the legged robot model
@@ -100,8 +101,8 @@ class LeggedRobotInterface final : public RobotInterface {
                                                         bool verbose);
     matrix_t initializeInputCostWeight(const std::string &taskFile, const CentroidalModelInfo &info);
     std::unique_ptr<StateInputCost> getFootPositionTrackingCost(const std::string &taskFile,
-                                                           const EndEffectorKinematics<scalar_t> &eeKinematics,
-                                                           const std::string &modelName, bool verbose);
+                                                                const EndEffectorKinematics<scalar_t> &eeKinematics,
+                                                                const std::string &modelName, bool verbose);
 
     std::pair<scalar_t, RelaxedBarrierPenalty::Config> loadFrictionConeSettings(const std::string &taskFile,
                                                                                 bool verbose) const;
@@ -110,6 +111,9 @@ class LeggedRobotInterface final : public RobotInterface {
     std::unique_ptr<StateInputCost> getFrictionConeSoftConstraint(
         size_t contactPointIndex, scalar_t frictionCoefficient,
         const RelaxedBarrierPenalty::Config &barrierPenaltyConfig);
+    std::unique_ptr<StateCost> getEndEffectorDistanceSoftConstraint(size_t contactPointIndex, bool alwaysActive,
+                                                                    const EndEffectorKinematics<scalar_t> &eeKinematics,
+                                                                    const std::string &taskFile, bool verbose);
     std::unique_ptr<StateInputConstraint> getZeroForceConstraint(size_t contactPointIndex);
     std::unique_ptr<StateInputConstraint> getZeroVelocityConstraint(const EndEffectorKinematics<scalar_t> &eeKinematics,
                                                                     size_t contactPointIndex,
@@ -138,7 +142,9 @@ class LeggedRobotInterface final : public RobotInterface {
     std::unique_ptr<RolloutBase> rolloutPtr_;
     std::unique_ptr<LeggedRobotInitializer> initializerPtr_;
 
+
     vector_t initialState_;
+    SdfDistanceTransformInterface distanceTransform_;
 };
 
 }  // namespace legged_robot

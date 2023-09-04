@@ -36,7 +36,6 @@ class FootPositionTrackingCost final : public StateInputCostGaussNewtonAd {
                                    const ad_vector_t &desiredPosition) override;
 
     FootPositionTrackingCost *clone() const override { 
-        std::cout << "Creating a copy" << std::endl;
         return new FootPositionTrackingCost(*this); }
 
    private:

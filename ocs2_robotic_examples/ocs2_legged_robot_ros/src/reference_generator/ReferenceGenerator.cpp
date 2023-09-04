@@ -38,7 +38,7 @@ constexpr size_t ROLL_IDX = 5;
 constexpr char NEWLINE = '\n';
 
 // TODO: load these constants from the config files
-constexpr float VX_MAX_VELOCITY = 0.3;
+constexpr float VX_MAX_VELOCITY = 0.9;
 constexpr float VY_MAX_VELOCITY = 0.2;
 constexpr float YAW_RATE_MAX_VELOCITY = 1.0;
 
@@ -353,7 +353,8 @@ void ReferenceGenerator::computeTrajectoryXY(const vector_t &currentState,
                     footTrajectories_[i][legIdx][Z_IDX] = footTrajectories_[i - 1][legIdx][Z_IDX];
                     if (optimizeFootholds_) {
                         optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
-                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i, i+1); // Only valid for trot gait
+                                         currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i,
+                                         i + 1);  // Only valid for trot gait
                         firstTouchdown[legIdx] = false;
                     }
                 } break;
@@ -587,7 +588,8 @@ vector3_t ReferenceGenerator::raibertHeuristic(const vector6_t &basePose, vector
 }
 
 void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t &nominalBasePose, const scalar_t time,
-                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx, int touchdownIdx, int liftOffIdx) {
+                                          const scalar_t currentPhase, bool firstTouchdown, size_t legIdx,
+                                          int touchdownIdx, int liftOffIdx) {
     // Too late to optimize - use the last optimized foothold
     vector3_t diff = vector3_t::Zero();
     if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
@@ -601,9 +603,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     const auto &map = gridMapInterface_.getMap();
 
     // Setup penalty function
-    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) {
-        return 0.0;
-    };
+    auto penaltyFunction = [this, touchdownIdx, liftOffIdx](const Eigen::Vector3d &projectedPoint) { return 0.0; };
 
     // Project nominal foothold onto the closest region
     const auto projection =

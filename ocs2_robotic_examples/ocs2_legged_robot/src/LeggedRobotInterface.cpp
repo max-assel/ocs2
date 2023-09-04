@@ -223,6 +223,10 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
         const std::string trackingName = footName + "_trackingCost";
         problemPtr_->costPtr->add(trackingName,
                                   getFootPositionTrackingCost(taskFile, *eeKinematicsPtr, trackingName, verbose));
+
+        problemPtr_->stateSoftConstraintPtr->add(
+            footName + "_distance",
+            getEndEffectorDistanceSoftConstraint(i, false, *eeKinematicsPtr, taskFile, verbose));
     }
 
     // Pre-computation
@@ -349,11 +353,11 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getFootPositionTrackingCos
         std::cerr << "footTrackingWeight:\n" << footTrackingWeight * footTrackingWeight << "\n";
         std::cerr << " #### =============================================================================\n";
     }
-    
+
     constexpr bool recompile = true;
-    return std::make_unique<FootPositionTrackingCost>(
-        footTrackingWeight, eeKinematics, pinocchioInterfaceCppAd, centroidalModelInfo_, modelName,
-        modelSettings_.modelFolderCppAd, recompile, modelSettings_.verboseCppAd);
+    return std::make_unique<FootPositionTrackingCost>(footTrackingWeight, eeKinematics, pinocchioInterfaceCppAd,
+                                                      centroidalModelInfo_, modelName, modelSettings_.modelFolderCppAd,
+                                                      recompile, modelSettings_.verboseCppAd);
 }
 
 /******************************************************************************************************/
@@ -398,6 +402,34 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getFrictionConeSoftConstra
     size_t contactPointIndex, scalar_t frictionCoefficient, const RelaxedBarrierPenalty::Config &barrierPenaltyConfig) {
     return std::make_unique<StateInputSoftConstraint>(getFrictionConeConstraint(contactPointIndex, frictionCoefficient),
                                                       std::make_unique<RelaxedBarrierPenalty>(barrierPenaltyConfig));
+}
+
+/******************************************************************************************************/
+/******************************************************************************************************/
+/******************************************************************************************************/
+std::unique_ptr<StateCost> LeggedRobotInterface::getEndEffectorDistanceSoftConstraint(
+    size_t contactPointIndex, bool alwaysActive, const EndEffectorKinematics<scalar_t> &eeKinematics,
+    const std::string &taskFile, bool verbose) {
+    // Load config
+    RelaxedBarrierPenalty::Config barrierPenaltyConfig;
+    boost::property_tree::ptree pt;
+    boost::property_tree::read_info(taskFile, pt);
+    const std::string prefix = "endEffectorDistanceSoftConstraint.";
+
+    if (verbose) {
+        std::cerr << "\n #### EE Distance Constraint Settings: ";
+        std::cerr << "\n #### =============================================================================\n";
+    }
+    loadData::loadPtreeValue(pt, barrierPenaltyConfig.mu, prefix + "mu", verbose);
+    loadData::loadPtreeValue(pt, barrierPenaltyConfig.delta, prefix + "delta", verbose);
+    if (verbose) {
+        std::cerr << " #### =============================================================================\n";
+    }
+
+    return std::make_unique<StateSoftConstraint>(std::make_unique<EndEffectorDistanceConstraint>(
+                                                     *referenceManagerPtr_, centroidalModelInfo_.stateDim, alwaysActive,
+                                                     eeKinematics, distanceTransform_, contactPointIndex),
+                                                 std::make_unique<RelaxedBarrierPenalty>(barrierPenaltyConfig));
 }
 
 /******************************************************************************************************/

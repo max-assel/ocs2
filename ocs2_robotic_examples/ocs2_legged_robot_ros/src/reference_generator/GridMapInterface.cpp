@@ -48,10 +48,13 @@ void GridMapInterface::mapCallback(const convex_plane_decomposition_msgs::Planar
     auto sdfStart = std::chrono::high_resolution_clock::now();
 
     auto &map = getMap();
+    for(auto &layer : getMap().getLayers()) {
+        std::cout << "Layer: " << layer << std::endl;
+    }
   
     // Compute signed distance field
-    std::vector<std::string> layers{layers_[0]};
-    auto &elevationData = map.get(layers[0]);
+    std::string layer = "elevation";
+    auto &elevationData = map.get(layer);
 
     // Inpaint if needed.
     if (elevationData.hasNaN()) {
@@ -59,10 +62,10 @@ void GridMapInterface::mapCallback(const convex_plane_decomposition_msgs::Planar
         elevationData = elevationData.unaryExpr([=](float v) { return std::isfinite(v)? v : inpaint; });
     }
     const float heightMargin{0.1};
-    const float minValue{elevationData.minCoeffOfFinites()};
+    const float minValue{elevationData.minCoeffOfFinites() - heightMargin};
     const float maxValue{elevationData.maxCoeffOfFinites() + heightMargin};
     std::unique_ptr<grid_map::SignedDistanceField> newSDF(new grid_map::SignedDistanceField(
-        map, layers_[0], minValue, maxValue));
+        map, layer, minValue, maxValue));
     sdfPtr_.swap(newSDF);
 
     auto sdfEnd = std::chrono::high_resolution_clock::now();
