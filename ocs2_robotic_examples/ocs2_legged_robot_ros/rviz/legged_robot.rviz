@@ -718,6 +718,7 @@ Visualization Manager:
       Namespaces:
         CoM Trajectory: true
         EE Trajectories: true
+        Future footholds: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -784,9 +785,9 @@ Visualization Manager:
       Class: grid_map_rviz_plugin/GridMap
       Color: 46; 52; 54
       Color Layer: elevation_roughness
-      Color Transformer: IntensityLayer
+      Color Transformer: FlatColor
       ColorMap: default
-      Enabled: false
+      Enabled: true
       Grid Cell Decimation: 1
       Grid Line Thickness: 0.10000000149011612
       Height Layer: elevation
@@ -802,7 +803,7 @@ Visualization Manager:
       Topic: /elevation_mapping/elevation_map_raw
       Unreliable: false
       Use ColorMap: true
-      Value: false
+      Value: true
     - Class: rviz/TF
       Enabled: true
       Filter (blacklist): ""
@@ -815,6 +816,10 @@ Visualization Manager:
         base_plan_frame_1:
           Value: true
         base_plan_frame_2:
+          Value: true
+        base_plan_frame_3:
+          Value: true
+        base_plan_frame_4:
           Value: true
       Marker Alpha: 1
       Marker Scale: 1
@@ -829,6 +834,10 @@ Visualization Manager:
           {}
         base_plan_frame_2:
           {}
+        base_plan_frame_3:
+          {}
+        base_plan_frame_4:
+          {}
       Update Interval: 0
       Value: true
     - Class: rviz/TF
@@ -842,17 +851,33 @@ Visualization Manager:
           Value: true
         LF_FOOT_plan_frame_2:
           Value: true
+        LF_FOOT_plan_frame_3:
+          Value: true
+        LF_FOOT_plan_frame_4:
+          Value: true
         LH_FOOT_plan_frame_1:
           Value: true
         LH_FOOT_plan_frame_2:
+          Value: true
+        LH_FOOT_plan_frame_3:
+          Value: true
+        LH_FOOT_plan_frame_4:
           Value: true
         RF_FOOT_plan_frame_1:
           Value: true
         RF_FOOT_plan_frame_2:
           Value: true
+        RF_FOOT_plan_frame_3:
+          Value: true
+        RF_FOOT_plan_frame_4:
+          Value: true
         RH_FOOT_plan_frame_1:
           Value: true
         RH_FOOT_plan_frame_2:
+          Value: true
+        RH_FOOT_plan_frame_3:
+          Value: true
+        RH_FOOT_plan_frame_4:
           Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
@@ -865,17 +890,33 @@ Visualization Manager:
           {}
         LF_FOOT_plan_frame_2:
           {}
+        LF_FOOT_plan_frame_3:
+          {}
+        LF_FOOT_plan_frame_4:
+          {}
         LH_FOOT_plan_frame_1:
           {}
         LH_FOOT_plan_frame_2:
+          {}
+        LH_FOOT_plan_frame_3:
+          {}
+        LH_FOOT_plan_frame_4:
           {}
         RF_FOOT_plan_frame_1:
           {}
         RF_FOOT_plan_frame_2:
           {}
+        RF_FOOT_plan_frame_3:
+          {}
+        RF_FOOT_plan_frame_4:
+          {}
         RH_FOOT_plan_frame_1:
           {}
         RH_FOOT_plan_frame_2:
+          {}
+        RH_FOOT_plan_frame_3:
+          {}
+        RH_FOOT_plan_frame_4:
           {}
       Update Interval: 0
       Value: true
@@ -921,7 +962,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 2.549610137939453
+      Distance: 6.312741279602051
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -929,9 +970,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 3.2124202251434326
-        Y: 0.020710494369268417
-        Z: -0.7471019625663757
+        X: -0.7488934993743896
+        Y: -0.4115486443042755
+        Z: -0.4711463749408722
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
@@ -939,7 +980,7 @@ Visualization Manager:
       Near Clip Distance: 0.009999999776482582
       Pitch: 0.5103986859321594
       Target Frame: <Fixed Frame>
-      Yaw: 1.638604760169983
+      Yaw: 1.6436047554016113
     Saved: ~
 Window Geometry:
   Displays:

@@ -39,16 +39,7 @@ bool EndEffectorDistanceConstraint::isActive(scalar_t time) const {
     if (alwaysActive_) {
         return true;
     }
-
     bool active = !referenceManagerPtr_->getContactFlags(time)[contactPointIndex_];
-    if (active) {
-        const auto &modeSchedule = referenceManagerPtr_->getModeSchedule();
-        auto phase = getSwingPhasePerLeg(time, modeSchedule)[contactPointIndex_].phase;
-        if (phase <= 0.3 || phase >= 0.7) {
-            active = false;
-        }
-    }
-
     if (active) {
         distanceTransformPtr_->setSdfPtr(referenceManagerPtr_->sdfPtr);
     }
@@ -64,10 +55,23 @@ vector_t EndEffectorDistanceConstraint::getValue(scalar_t time, const vector_t &
     const auto numEEs = kinematicsPtr_->getIds().size();
     vector_t g(numEEs);
 
-    scalar_t weight = 1.0;
+    const auto &modeSchedule = referenceManagerPtr_->getModeSchedule();
+    auto phase = getSwingPhasePerLeg(time, modeSchedule)[contactPointIndex_].phase;
+    scalar_t weight = -1.0;
+    if (phase >= 0.2 && phase <= 0.8) {
+        if (phase <= 0.5) {
+            weight = (phase - 0.2) / 0.3;
+        } else {
+            weight = (0.8 - phase) / 0.3;
+        }
+    }
 
-    const auto position = kinematicsPtr_->getPosition(state)[0];
-    g[0] = weight * (distanceTransformPtr_->getValue(position) - CLEARANCE);
+    if (weight == -1.0) {
+        g[0] = 5000.0;
+    } else {
+        const auto position = kinematicsPtr_->getPosition(state)[0];
+        g[0] = distanceTransformPtr_->getValue(position) - CLEARANCE + 3 * (1.0 - weight) * CLEARANCE;
+    }
 
     return g;
 }
@@ -83,12 +87,27 @@ VectorFunctionLinearApproximation EndEffectorDistanceConstraint::getLinearApprox
     const auto numEEs = kinematicsPtr_->getIds().size();
     const auto eePosLinApprox = kinematicsPtr_->getPositionLinearApproximation(state);
 
-    scalar_t weight = 1.0;
+    const auto &modeSchedule = referenceManagerPtr_->getModeSchedule();
+    auto phase = getSwingPhasePerLeg(time, modeSchedule)[contactPointIndex_].phase;
+    scalar_t weight = -1.0;
+    if (phase >= 0.2 && phase <= 0.8) {
+        if (phase <= 0.5) {
+            weight = (phase - 0.2) / 0.3;
+        } else {
+            weight = (0.8 - phase) / 0.3;
+        }
+    }
 
     VectorFunctionLinearApproximation approx = VectorFunctionLinearApproximation::Zero(numEEs, stateDim_, 0);
-    const auto distanceValueGradient = distanceTransformPtr_->getLinearApproximation(eePosLinApprox[0].f);
-    approx.f[0] = weight * (distanceValueGradient.first - CLEARANCE);
-    approx.dfdx.row(0).noalias() = weight * (distanceValueGradient.second.transpose() * eePosLinApprox[0].dfdx);
+
+    if (weight == -1.0) {
+        approx.f[0] = 5000.0;
+        approx.dfdx.row(0).setZero();
+    } else {
+        const auto distanceValueGradient = distanceTransformPtr_->getLinearApproximation(eePosLinApprox[0].f);
+        approx.f[0] = weight * (distanceValueGradient.first - CLEARANCE) + 3 * (1.0 - weight) * CLEARANCE;
+        approx.dfdx.row(0).noalias() = weight * (distanceValueGradient.second.transpose() * eePosLinApprox[0].dfdx);
+    }
 
     return approx;
 }

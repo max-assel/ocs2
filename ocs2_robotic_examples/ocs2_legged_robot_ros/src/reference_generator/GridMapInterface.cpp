@@ -96,8 +96,6 @@ scalar_t GridMapInterface::atPositionElevationSmooth(scalar_t x, scalar_t y) {
         return 0.0;
     }
 
-
-
     const auto &map = getMap();
     pos_[0] = x;
     pos_[1] = y;

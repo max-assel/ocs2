@@ -428,9 +428,17 @@ void ReferenceGenerator::computeFootTrajectories(const vector_t &currentState,
                         raibertHeuristic(baseTrajectory_[i], hipPositions_[i].col(legIdx),
                                          footTrajectories_[i - 1][legIdx], legIdx, phase, stanceTime);
                     footTrajectories_[i][legIdx][Z_IDX] = baseTrajectory_[i][Z_IDX] - comHeight_;
+
+                    // find next liftoff
+                    int liftoff_idx = i+1;
+                    while(liftoff_idx < samplingTimes_.size() && contactFlagsNext_[liftoff_idx][legIdx]) {
+                        ++liftoff_idx;
+                    }
+                    
+
                     optimizeFoothold(footTrajectories_[i][legIdx], baseTrajectory_[i], samplingTimes_[i],
                                      currentswingPhases[legIdx].phase, firstTouchdown[legIdx], legIdx, i,
-                                     i + 1);  // Only valid for trot gait
+                                     liftoff_idx);  // Only valid for trot gait
                     firstTouchdown[legIdx] = false;
                 } break;
                 case FootState::SWING: {
@@ -618,7 +626,6 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
                                           const scalar_t currentPhase, bool firstTouchdown, size_t legIdx,
                                           int touchdownIdx, int liftOffIdx) {
     // Too late to optimize - use the last optimized foothold
-    vector3_t diff = vector3_t::Zero();
     if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
         // diff = nextOptimizedFootholds_[legIdx] - nominalFoothold;
         nominalFoothold.head<2>() = nextOptimizedFootholds_[legIdx].head<2>();
@@ -626,23 +633,27 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
         return;
     }
 
+    vector3_t diff = vector3_t::Zero();
     // Get gridmap
     const auto &map = gridMapInterface_.getMap();
 
     // Setup penalty function
     auto penaltyFunction = [this, touchdownIdx, liftOffIdx, legIdx](const Eigen::Vector3d &projectedPoint) {
         scalar_t cost = 0.0;
-        constexpr scalar_t w_kinematics = 0.2;
+        // constexpr scalar_t w_kinematics_touchdown = 0.15;
+        // constexpr scalar_t w_kinematics_liftoff = 0.14;
+        constexpr scalar_t w_kinematics_touchdown = 0.05;
+        constexpr scalar_t w_kinematics_liftoff = 0.02;
         const scalar_t dist1 = (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
         const scalar_t dist2 = (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
-        cost += w_kinematics * dist1;
-        cost += w_kinematics * dist2;
+        cost += w_kinematics_touchdown * dist1;
+        cost += w_kinematics_liftoff * dist2;
 
-        if(dist1 >= 0.60 || dist2 >= 0.60) {
+        if(dist1 >= 0.57 || dist2 >= 0.57) {
             cost += 1e4;
         }
 
-        if(dist1 <= 0.2 || dist2 <= 0.2) {
+        if(dist1 <= 0.1 || dist2 <= 0.1) {
             cost += 1e4;
         }
         
