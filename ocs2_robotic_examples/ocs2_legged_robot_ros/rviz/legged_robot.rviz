@@ -718,7 +718,6 @@ Visualization Manager:
       Namespaces:
         CoM Trajectory: true
         EE Trajectories: true
-        Future footholds: true
       Queue Size: 100
       Value: true
     - Class: rviz/MarkerArray
@@ -780,7 +779,7 @@ Visualization Manager:
           Value: false
       Enabled: true
       Name: Target Trajectories
-    - Alpha: 1
+    - Alpha: 0.4000000059604645
       Autocompute Intensity Bounds: true
       Class: grid_map_rviz_plugin/GridMap
       Color: 46; 52; 54
@@ -789,8 +788,8 @@ Visualization Manager:
       ColorMap: default
       Enabled: true
       Grid Cell Decimation: 1
-      Grid Line Thickness: 0.10000000149011612
-      Height Layer: elevation
+      Grid Line Thickness: 0.05000000074505806
+      Height Layer: elevation_smooth2
       Height Transformer: GridMapLayer
       History Length: 1
       Invert ColorMap: false
@@ -817,10 +816,6 @@ Visualization Manager:
           Value: true
         base_plan_frame_2:
           Value: true
-        base_plan_frame_3:
-          Value: true
-        base_plan_frame_4:
-          Value: true
       Marker Alpha: 1
       Marker Scale: 1
       Name: Base pose plan
@@ -833,10 +828,6 @@ Visualization Manager:
         base_plan_frame_1:
           {}
         base_plan_frame_2:
-          {}
-        base_plan_frame_3:
-          {}
-        base_plan_frame_4:
           {}
       Update Interval: 0
       Value: true
@@ -851,33 +842,17 @@ Visualization Manager:
           Value: true
         LF_FOOT_plan_frame_2:
           Value: true
-        LF_FOOT_plan_frame_3:
-          Value: true
-        LF_FOOT_plan_frame_4:
-          Value: true
         LH_FOOT_plan_frame_1:
           Value: true
         LH_FOOT_plan_frame_2:
-          Value: true
-        LH_FOOT_plan_frame_3:
-          Value: true
-        LH_FOOT_plan_frame_4:
           Value: true
         RF_FOOT_plan_frame_1:
           Value: true
         RF_FOOT_plan_frame_2:
           Value: true
-        RF_FOOT_plan_frame_3:
-          Value: true
-        RF_FOOT_plan_frame_4:
-          Value: true
         RH_FOOT_plan_frame_1:
           Value: true
         RH_FOOT_plan_frame_2:
-          Value: true
-        RH_FOOT_plan_frame_3:
-          Value: true
-        RH_FOOT_plan_frame_4:
           Value: true
       Marker Alpha: 1
       Marker Scale: 0.30000001192092896
@@ -890,33 +865,17 @@ Visualization Manager:
           {}
         LF_FOOT_plan_frame_2:
           {}
-        LF_FOOT_plan_frame_3:
-          {}
-        LF_FOOT_plan_frame_4:
-          {}
         LH_FOOT_plan_frame_1:
           {}
         LH_FOOT_plan_frame_2:
-          {}
-        LH_FOOT_plan_frame_3:
-          {}
-        LH_FOOT_plan_frame_4:
           {}
         RF_FOOT_plan_frame_1:
           {}
         RF_FOOT_plan_frame_2:
           {}
-        RF_FOOT_plan_frame_3:
-          {}
-        RF_FOOT_plan_frame_4:
-          {}
         RH_FOOT_plan_frame_1:
           {}
         RH_FOOT_plan_frame_2:
-          {}
-        RH_FOOT_plan_frame_3:
-          {}
-        RH_FOOT_plan_frame_4:
           {}
       Update Interval: 0
       Value: true
@@ -962,7 +921,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 6.312741279602051
+      Distance: 3.7800276279449463
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -970,9 +929,9 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: -0.7488934993743896
-        Y: -0.4115486443042755
-        Z: -0.4711463749408722
+        X: -0.4890703856945038
+        Y: -0.39425429701805115
+        Z: -0.4681956470012665
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false

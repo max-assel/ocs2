@@ -22,7 +22,7 @@ FootPositionTrackingCost::FootPositionTrackingCost(matrix_t QPosition,
       pinocchioInterface_(pinocchioInterface),
       mapping_(centroidalModelInfo.toCppAd()) {
     
-    constexpr size_t nParameters = 3;
+    constexpr size_t nParameters = 2;
 
     initialize(centroidalModelInfo.stateDim, centroidalModelInfo.inputDim, nParameters, modelName, modelFolder,
                recompileLibraries, verbose);
@@ -31,7 +31,7 @@ FootPositionTrackingCost::FootPositionTrackingCost(matrix_t QPosition,
 vector_t FootPositionTrackingCost::getParameters(scalar_t time, const TargetTrajectories &trajectory,
                                                  const PreComputation &) const {
     const auto desiredState = trajectory.getDesiredState(time);
-    return endEffectorKinematicsPtr_->getPosition(desiredState)[0];
+    return endEffectorKinematicsPtr_->getPosition(desiredState)[0].head<2>();
 }
 
 ad_vector_t FootPositionTrackingCost::costVectorFunction(ad_scalar_t time, const ad_vector_t &state,
@@ -50,7 +50,7 @@ ad_vector_t FootPositionTrackingCost::costVectorFunction(ad_scalar_t time, const
 
     // Get end-effector position
     const size_t frameId = model.getBodyId(endEffectorKinematicsPtr_->getIds()[0]);
-    ad_vector_t currentPosition = data.oMf[frameId].translation();
+    ad_vector_t currentPosition = data.oMf[frameId].translation().head<2>();
 
     // Compute position error
     const ad_vector_t error = desiredPosition - currentPosition;

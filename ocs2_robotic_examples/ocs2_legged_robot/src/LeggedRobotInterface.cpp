@@ -341,7 +341,7 @@ std::unique_ptr<StateInputCost> LeggedRobotInterface::getBaseTrackingCost(const 
 std::unique_ptr<StateInputCost> LeggedRobotInterface::getFootPositionTrackingCost(
     const std::string &taskFile, const EndEffectorKinematics<scalar_t> &eeKinematics, const std::string &modelName,
     bool verbose) {
-    matrix_t footTrackingWeight(3, 3);
+    matrix_t footTrackingWeight(2, 2);
     loadData::loadEigenMatrix(taskFile, "footTrackingWeight", footTrackingWeight);
     footTrackingWeight = footTrackingWeight.cwiseSqrt();
 

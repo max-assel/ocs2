@@ -69,8 +69,9 @@ vector_t EndEffectorDistanceConstraint::getValue(scalar_t time, const vector_t &
     if (weight == -1.0) {
         g[0] = 5000.0;
     } else {
+        weight = 5.0;
         const auto position = kinematicsPtr_->getPosition(state)[0];
-        g[0] = distanceTransformPtr_->getValue(position) - CLEARANCE + 3 * (1.0 - weight) * CLEARANCE;
+        g[0] = (distanceTransformPtr_->getValue(position) - CLEARANCE) * weight;
     }
 
     return g;
@@ -104,8 +105,9 @@ VectorFunctionLinearApproximation EndEffectorDistanceConstraint::getLinearApprox
         approx.f[0] = 5000.0;
         approx.dfdx.row(0).setZero();
     } else {
+        weight = 5.0;
         const auto distanceValueGradient = distanceTransformPtr_->getLinearApproximation(eePosLinApprox[0].f);
-        approx.f[0] = weight * (distanceValueGradient.first - CLEARANCE) + 3 * (1.0 - weight) * CLEARANCE;
+        approx.f[0] = weight * (distanceValueGradient.first - CLEARANCE);
         approx.dfdx.row(0).noalias() = weight * (distanceValueGradient.second.transpose() * eePosLinApprox[0].dfdx);
     }
 

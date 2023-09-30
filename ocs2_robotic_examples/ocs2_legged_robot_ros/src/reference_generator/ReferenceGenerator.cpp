@@ -38,9 +38,9 @@ constexpr size_t ROLL_IDX = 5;
 constexpr char NEWLINE = '\n';
 
 // TODO: load these constants from the config files
-constexpr float VX_MAX_VELOCITY = 0.9;
-constexpr float VY_MAX_VELOCITY = 0.2;
-constexpr float YAW_RATE_MAX_VELOCITY = 1.0;
+constexpr float VX_MAX_VELOCITY = 0.5;
+constexpr float VY_MAX_VELOCITY = 0.3;
+constexpr float YAW_RATE_MAX_VELOCITY = 0.3;
 
 constexpr scalar_t BUFFER_SIZE = 100;
 
@@ -640,23 +640,19 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
     // Setup penalty function
     auto penaltyFunction = [this, touchdownIdx, liftOffIdx, legIdx](const Eigen::Vector3d &projectedPoint) {
         scalar_t cost = 0.0;
-        // constexpr scalar_t w_kinematics_touchdown = 0.15;
-        // constexpr scalar_t w_kinematics_liftoff = 0.14;
-        constexpr scalar_t w_kinematics_touchdown = 0.05;
+        constexpr scalar_t w_kinematics_touchdown = 0.15;
         constexpr scalar_t w_kinematics_liftoff = 0.02;
+        // constexpr scalar_t w_kinematics_touchdown = 0.05;
+        // constexpr scalar_t w_kinematics_liftoff = 0.02;
         const scalar_t dist1 = (projectedPoint - hipPositions_[touchdownIdx].col(legIdx)).norm();
         const scalar_t dist2 = (projectedPoint - hipPositions_[liftOffIdx].col(legIdx)).norm();
         cost += w_kinematics_touchdown * dist1;
         cost += w_kinematics_liftoff * dist2;
 
-        if(dist1 >= 0.57 || dist2 >= 0.57) {
+        if(dist1 >= 0.58 || dist2 >= 0.58) {
             cost += 1e4;
         }
 
-        if(dist1 <= 0.1 || dist2 <= 0.1) {
-            cost += 1e4;
-        }
-        
         return cost;
     };
 
