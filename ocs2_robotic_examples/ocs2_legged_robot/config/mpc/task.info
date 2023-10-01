@@ -182,20 +182,20 @@ Q
   scaling 1e+0
 
   ;; Normalized Centroidal Momentum: [linear, angular] ;;
-  (0,0)   10.0     ; vcom_x
-  (1,1)   10.0     ; vcom_y
-  (2,2)   50.0     ; vcom_z
+  (0,0)   15.0     ; vcom_x
+  (1,1)   15.0     ; vcom_y
+  (2,2)   30.0     ; vcom_z
   (3,3)   10.0      ; L_x / robotMass
   (4,4)   10.0     ; L_y / robotMass
-  (5,5)   60.0     ; L_z / robotMass
+  (5,5)   10.0     ; L_z / robotMass
 
   ;; Base Pose: [position, orientation] ;;
-  (6,6)   10.0    ; p_base_x
-  (7,7)   10.0    ; p_base_y
-  (8,8)   700.0    ; p_base_z
-  (9,9)   300.0    ; theta_base_z
-  (10,10) 400.0    ; theta_base_y
-  (11,11) 400.0    ; theta_base_x
+  (6,6)   1000.0    ; p_base_x
+  (7,7)   1000.0    ; p_base_y
+  (8,8)   1500.0    ; p_base_z
+  (9,9)   100.0    ; theta_base_z
+  (10,10) 300.0    ; theta_base_y
+  (11,11) 300.0    ; theta_base_x
 
   ;; Leg Joint Positions: [LF, LH, RF, RH] ;;
   (12,12) 2.0     ; LF_HAA
@@ -232,23 +232,23 @@ R
   (11,11) 1.0       ; right_hind_force
 
   ;; foot velocity relative to base: [LF, LH, RF, RH] (uses the Jacobian at nominal configuration) ;;
-  (12,12) 30000.0    ; x
-  (13,13) 30000.0    ; y
-  (14,14) 30000.0    ; z
-  (15,15) 30000.0    ; x
-  (16,16) 30000.0    ; y
-  (17,17) 30000.0    ; z
-  (18,18) 30000.0    ; x
-  (19,19) 30000.0    ; y
-  (20,20) 30000.0    ; z
-  (21,21) 30000.0    ; x
-  (22,22) 30000.0    ; y
-  (23,23) 30000.0    ; z
+  (12,12) 15000.0    ; x
+  (13,13) 15000.0    ; y
+  (14,14) 15000.0    ; z
+  (15,15) 15000.0    ; x
+  (16,16) 15000.0    ; y
+  (17,17) 15000.0    ; z
+  (18,18) 15000.0    ; x
+  (19,19) 15000.0    ; y
+  (20,20) 15000.0    ; z
+  (21,21) 15000.0    ; x
+  (22,22) 15000.0    ; y
+  (23,23) 15000.0    ; z
 }
 
 frictionConeSoftConstraint
 {
-  frictionCoefficient    0.7
+  frictionCoefficient    0.7 
   
   ; relaxed log barrier parameters
   mu                     0.1
@@ -264,13 +264,13 @@ endEffectorDistanceSoftConstraint
 footPlacementSoftConstraint
 {
   ; relaxed log barrier parameters
-  mu                     1e-2
+  mu                     1e-1
   delta                  1e-3
 }
 
 footTrackingWeight
 {
   scaling 1
-  (0,0)  1000       ; x
-  (1,1)  1000       ; y
+  (0,0)  900       ; x
+  (1,1)  900       ; y
 }
