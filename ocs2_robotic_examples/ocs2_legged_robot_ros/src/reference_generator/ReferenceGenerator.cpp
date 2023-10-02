@@ -626,7 +626,7 @@ void ReferenceGenerator::optimizeFoothold(vector3_t &nominalFoothold, vector6_t 
                                           const scalar_t currentPhase, bool firstTouchdown, size_t legIdx,
                                           int touchdownIdx, int liftOffIdx) {
     // Too late to optimize - use the last optimized foothold
-    if (firstTouchdown && currentPhase > 0.5 && !firstRun_) {
+    if (firstTouchdown && currentPhase > 0.15 && !firstRun_) {
         // diff = nextOptimizedFootholds_[legIdx] - nominalFoothold;
         nominalFoothold.head<2>() = nextOptimizedFootholds_[legIdx].head<2>();
         // nominalBasePose.head<2>() += diff.head<2>() / 4.0;
