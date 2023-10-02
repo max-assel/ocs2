@@ -149,6 +149,14 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
                               useFootPlacementConstraint);
     std::cerr << "Using foot placement constraint: " << useFootPlacementConstraint << std::endl;
 
+    bool useFootDistanceConstraint = false;
+    loadData::loadCppDataType(taskFile, "legged_robot_interface.useFootDistanceConstraint", useFootDistanceConstraint);
+    std::cerr << "Using foot distance constraint: " << useFootDistanceConstraint << std::endl;
+
+    bool useFootTrackingCost = false;
+    loadData::loadCppDataType(taskFile, "legged_robot_interface.useFootTrackingCost", useFootTrackingCost);
+    std::cerr << "Using foot distance cost: " << useFootTrackingCost << std::endl;
+
     std::unique_ptr<SystemDynamicsBase> dynamicsPtr;
     if (useAnalyticalGradientsDynamics) {
         throw std::runtime_error(
@@ -220,13 +228,17 @@ void LeggedRobotInterface::setupOptimalConrolProblem(const std::string &taskFile
                 getFootPlacementConstraint(*eeKinematicsPtr, i, footPlacementbarrierPenaltyConfig));
         }
 
-        const std::string trackingName = footName + "_trackingCost";
-        problemPtr_->costPtr->add(trackingName,
-                                  getFootPositionTrackingCost(taskFile, *eeKinematicsPtr, trackingName, verbose));
+        if (useFootTrackingCost) {
+            const std::string trackingName = footName + "_trackingCost";
+            problemPtr_->costPtr->add(trackingName,
+                                      getFootPositionTrackingCost(taskFile, *eeKinematicsPtr, trackingName, verbose));
+        }
 
-        problemPtr_->stateSoftConstraintPtr->add(
-            footName + "_distance",
-            getEndEffectorDistanceSoftConstraint(i, false, *eeKinematicsPtr, taskFile, verbose));
+        if (useFootDistanceConstraint) {
+            problemPtr_->stateSoftConstraintPtr->add(
+                footName + "_distance",
+                getEndEffectorDistanceSoftConstraint(i, false, *eeKinematicsPtr, taskFile, verbose));
+        }
     }
 
     // Pre-computation

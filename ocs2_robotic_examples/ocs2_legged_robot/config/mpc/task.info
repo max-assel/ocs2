@@ -6,6 +6,8 @@ legged_robot_interface
   useAnalyticalGradientsDynamics        false
   useAnalyticalGradientsConstraints     false
   useFootPlacementConstraint            true
+  useFootDistanceConstraint             true
+  useFootTrackingCost                   true
 }
 
 model_settings
