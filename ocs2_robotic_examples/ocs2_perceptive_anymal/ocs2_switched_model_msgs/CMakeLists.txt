@@ -16,6 +16,7 @@ add_message_files(DIRECTORY msg FILES
   gait.msg
   gait_sequence.msg
   scheduled_gait_sequence.msg
+  local_terrain.msg
 )
 
 # Declare the service files to be built

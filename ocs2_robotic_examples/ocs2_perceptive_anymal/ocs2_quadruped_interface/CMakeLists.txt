@@ -11,6 +11,7 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   ocs2_robotic_tools
   ocs2_switched_model_interface
   ocs2_anymal_commands
+  ocs2_switched_model_msgs
   roscpp
   tf
   kdl_parser
