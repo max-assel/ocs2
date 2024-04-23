@@ -65,6 +65,7 @@ add_library(${PROJECT_NAME}
   src/SwingPlanningVisualizer.cpp
   src/TerrainPlaneVisualizer.cpp
   src/TerrainReceiver.cpp
+  src/LocalTerrainReceiver.cpp
 )
 add_dependencies(${PROJECT_NAME}
   ${${PROJECT_NAME}_EXPORTED_TARGETS}
