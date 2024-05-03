@@ -70,21 +70,21 @@ LeggedRobotInterface::LeggedRobotInterface(const std::string& taskFile, const st
   // check that task file exists
   boost::filesystem::path taskFilePath(taskFile);
   if (boost::filesystem::exists(taskFilePath)) {
-    std::cerr << "[LeggedRobotInterface] Loading task file: " << taskFilePath << std::endl;
+    // std::cerr << "[LeggedRobotInterface] Loading task file: " << taskFilePath << std::endl;
   } else {
     throw std::invalid_argument("[LeggedRobotInterface] Task file not found: " + taskFilePath.string());
   }
   // check that urdf file exists
   boost::filesystem::path urdfFilePath(urdfFile);
   if (boost::filesystem::exists(urdfFilePath)) {
-    std::cerr << "[LeggedRobotInterface] Loading Pinocchio model from: " << urdfFilePath << std::endl;
+    // std::cerr << "[LeggedRobotInterface] Loading Pinocchio model from: " << urdfFilePath << std::endl;
   } else {
     throw std::invalid_argument("[LeggedRobotInterface] URDF file not found: " + urdfFilePath.string());
   }
   // check that targetCommand file exists
   boost::filesystem::path referenceFilePath(referenceFile);
   if (boost::filesystem::exists(referenceFilePath)) {
-    std::cerr << "[LeggedRobotInterface] Loading target command settings from: " << referenceFilePath << std::endl;
+    // std::cerr << "[LeggedRobotInterface] Loading target command settings from: " << referenceFilePath << std::endl;
   } else {
     throw std::invalid_argument("[LeggedRobotInterface] targetCommand file not found: " + referenceFilePath.string());
   }

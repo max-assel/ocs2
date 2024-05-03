@@ -162,7 +162,7 @@ inline void loadEigenMatrix(const std::string& filename, const std::string& matr
   if (numFailed == matrix.size()) {
     throw std::runtime_error("[loadEigenMatrix] Could not load matrix \"" + matrixName + "\" from file \"" + filename + "\".");
   } else if (numFailed > 0) {
-    std::cerr << "WARNING: Loaded at least one default value in matrix: \"" + matrixName + "\"\n";
+    // std::cerr << "WARNING: Loaded at least one default value in matrix: \"" + matrixName + "\"\n";
   }
 }
 

@@ -83,6 +83,7 @@ SqpSolver::SqpSolver(sqp::Settings settings, const OptimalControlProblem& optima
 }
 
 SqpSolver::~SqpSolver() {
+  return;
   if (settings_.printSolverStatistics) {
     std::cerr << getBenchmarkingInformation() << std::endl;
   }

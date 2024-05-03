@@ -47,9 +47,9 @@ inline void setThreadPriority(int priority, pthread_t thread) {
 
   if (priority != 0) {
     if (pthread_setschedparam(thread, SCHED_FIFO, &sched) != 0) {
-      std::cerr << "WARNING: Failed to set threads priority (one possible reason could be "
-                   "that the user and the group permissions are not set properly.)"
-                << std::endl;
+      // std::cerr << "WARNING: Failed to set threads priority (one possible reason could be "
+      //              "that the user and the group permissions are not set properly.)"
+      //           << std::endl;
     }
   }
 }
