@@ -84,8 +84,8 @@ void LeggedRobotVisualizer::launchVisualizerNode(ros::NodeHandle& nodeHandle) {
 
   // Load URDF model
   urdf::Model urdfModel;
-  if (!urdfModel.initParam("legged_robot_description")) {
-    std::cerr << "[LeggedRobotVisualizer] Could not read URDF from: \"legged_robot_description\"" << std::endl;
+  if (!urdfModel.initParam("robot_description")) {
+    std::cerr << "[LeggedRobotVisualizer] Could not read URDF from: \"robot_description\"" << std::endl;
   } else {
     KDL::Tree kdlTree;
     kdl_parser::treeFromUrdfModel(urdfModel, kdlTree);
