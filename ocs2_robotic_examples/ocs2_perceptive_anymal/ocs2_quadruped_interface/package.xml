@@ -22,9 +22,6 @@
   <depend>ocs2_switched_model_interface</depend>
   <depend>ocs2_anymal_commands</depend>
   <depend>roscpp</depend>
-  <depend>tf</depend>
-  <depend>kdl_parser</depend>
-  <depend>robot_state_publisher</depend>
   <depend>segmented_planes_terrain_model</depend>
 
 </package>

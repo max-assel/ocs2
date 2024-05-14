@@ -12,9 +12,6 @@ set(CATKIN_PACKAGE_DEPENDENCIES
   ocs2_switched_model_interface
   ocs2_anymal_commands
   roscpp
-  tf
-  kdl_parser
-  robot_state_publisher
   segmented_planes_terrain_model
 )
 find_package(catkin REQUIRED COMPONENTS
@@ -53,16 +50,11 @@ include_directories(
 
 # Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/QuadrupedDummyNode.cpp
   src/QuadrupedInterface.cpp
   src/QuadrupedLogger.cpp
   src/QuadrupedMpc.cpp
   src/QuadrupedMpcNode.cpp
   src/QuadrupedPointfootInterface.cpp
-  src/QuadrupedTfPublisher.cpp
-  src/QuadrupedVisualizer.cpp
-  src/SwingPlanningVisualizer.cpp
-  src/TerrainPlaneVisualizer.cpp
   src/TerrainReceiver.cpp
 )
 add_dependencies(${PROJECT_NAME}

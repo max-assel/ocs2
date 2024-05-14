@@ -69,18 +69,6 @@ target_link_libraries(${PROJECT_NAME}_mpc_node
   ${catkin_LIBRARIES}
 )
 
-add_executable(${PROJECT_NAME}_dummy_mrt_node
-  src/AnymalDummyMRT.cpp
-)
-add_dependencies(${PROJECT_NAME}_dummy_mrt_node
-  ${PROJECT_NAME}
-  ${${PROJECT_NAME}_EXPORTED_TARGETS}
-  ${catkin_EXPORTED_TARGETS}
-)
-target_link_libraries(${PROJECT_NAME}_dummy_mrt_node
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-)
 
 #########################
 ###   CLANG TOOLING   ###
@@ -89,7 +77,7 @@ find_package(cmake_clang_tools QUIET)
 if (cmake_clang_tools_FOUND)
   message(STATUS "Run clang tooling")
   add_clang_tooling(
-    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_mpc_node ${PROJECT_NAME}_dummy_mrt_node
+    TARGETS ${PROJECT_NAME} ${PROJECT_NAME}_mpc_node
     SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
     CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
     CF_WERROR
@@ -103,9 +91,6 @@ endif (cmake_clang_tools_FOUND)
 install(TARGETS ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-install(TARGETS ${PROJECT_NAME}_mpc_node ${PROJECT_NAME}_dummy_mrt_node
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 install(DIRECTORY include/${PROJECT_NAME}/

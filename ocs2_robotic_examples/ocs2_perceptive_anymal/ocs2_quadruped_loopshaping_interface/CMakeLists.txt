@@ -41,7 +41,6 @@ include_directories(
 
 # Declare a C++ library
 add_library(${PROJECT_NAME}
-  src/QuadrupedLoopshapingDummyNode.cpp
   src/QuadrupedLoopshapingInterface.cpp
   src/QuadrupedLoopshapingMpc.cpp
   src/QuadrupedLoopshapingMpcNode.cpp

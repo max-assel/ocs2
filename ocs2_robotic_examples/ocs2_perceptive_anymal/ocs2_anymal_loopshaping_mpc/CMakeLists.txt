@@ -64,14 +64,6 @@ target_link_libraries(${PROJECT_NAME}_dummy_mrt_node
   ${catkin_LIBRARIES}
 )
 
-add_executable(${PROJECT_NAME}_perceptive_demo
-  src/PerceptiveMpcDemo.cpp
-  )
-target_link_libraries(${PROJECT_NAME}_perceptive_demo
-  ${PROJECT_NAME}
-  ${catkin_LIBRARIES}
-  )
-
 #########################
 ###   CLANG TOOLING   ###
 #########################
