@@ -10,7 +10,7 @@
 #include "ocs2_anymal_commands/ModeSequenceKeyboard.h"
 
 int main(int argc, char* argv[]) {
-  const std::string robotName = "anymal";
+  const std::string robotName = "go2"; // "anymal";
   std::string gaitFile = ros::package::getPath("ocs2_anymal_commands") + "/config/gait.info";
   std::cerr << "Loading gait file: " << gaitFile << std::endl;
 
