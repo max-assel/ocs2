@@ -27,8 +27,8 @@ QuadrupedPointfootInterface::QuadrupedPointfootInterface(const kinematic_model_t
 
   // Cost terms
   problemPtr_->costPtr->add("MotionTrackingCost", createMotionTrackingCost());
-  problemPtr_->stateCostPtr->add("FootPlacementCost", createFootPlacementCost());
-  problemPtr_->stateCostPtr->add("CollisionAvoidanceCost", createCollisionAvoidanceCost());
+  // problemPtr_->stateCostPtr->add("FootPlacementCost", createFootPlacementCost());
+  // problemPtr_->stateCostPtr->add("CollisionAvoidanceCost", createCollisionAvoidanceCost());
   problemPtr_->costPtr->add("JointLimitCost", createJointLimitsSoftConstraint());
   problemPtr_->costPtr->add("TorqueLimitCost", createTorqueLimitsSoftConstraint(jointTorquesForWeightCompensation));
   problemPtr_->costPtr->add("FrictionCones", createFrictionConeCost());
@@ -52,7 +52,7 @@ QuadrupedPointfootInterface::QuadrupedPointfootInterface(const kinematic_model_t
   getSwitchedModelModeScheduleManagerPtr()->preSolverRun(0.0, 1.0, getInitialState());
   auto lqrSolution = ocs2::continuous_time_lqr::solve(*problemPtr_, 0.0, getInitialState(), uSystemForWeightCompensation);
   lqrSolution.valueFunction *= 10.0;
-  problemPtr_->finalCostPtr->add("lqr_terminal_cost", createMotionTrackingTerminalCost(lqrSolution.valueFunction));
+  // problemPtr_->finalCostPtr->add("lqr_terminal_cost", createMotionTrackingTerminalCost(lqrSolution.valueFunction));
 
   // Store cost approximation at nominal state input
   auto& preComputation = *problemPtr_->preComputationPtr;
