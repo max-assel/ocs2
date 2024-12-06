@@ -27,7 +27,7 @@ QuadrupedPointfootInterface::QuadrupedPointfootInterface(const kinematic_model_t
 
   // Cost terms
   problemPtr_->costPtr->add("MotionTrackingCost", createMotionTrackingCost());
-  // problemPtr_->stateCostPtr->add("FootPlacementCost", createFootPlacementCost());
+  problemPtr_->stateCostPtr->add("FootPlacementCost", createFootPlacementCost());
   // problemPtr_->stateCostPtr->add("CollisionAvoidanceCost", createCollisionAvoidanceCost());
   problemPtr_->costPtr->add("JointLimitCost", createJointLimitsSoftConstraint());
   problemPtr_->costPtr->add("TorqueLimitCost", createTorqueLimitsSoftConstraint(jointTorquesForWeightCompensation));
@@ -37,7 +37,8 @@ QuadrupedPointfootInterface::QuadrupedPointfootInterface(const kinematic_model_t
   problemPtr_->dynamicsPtr = createDynamics();
 
   // Per leg terms
-  for (int i = 0; i < NUM_CONTACT_POINTS; i++) {
+  for (int i = 0; i < NUM_CONTACT_POINTS; i++) 
+  {
     const auto& footName = feetNames[i];
     problemPtr_->equalityConstraintPtr->add(footName + "_ZeroForce", createZeroForceConstraint(i));
     problemPtr_->equalityConstraintPtr->add(footName + "_EENormal", createFootNormalConstraint(i));
